@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset=utf8><style>@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+*{box-sizing:border-box;margin:0}
+body{width:1080px;height:1350px;background:#0A0C11;font-family:'Inter','Helvetica Neue',Arial,sans-serif;color:#F4EFE3;position:relative;overflow:hidden}
+.bg{position:absolute;inset:0;background:radial-gradient(900px 600px at 85% -5%,rgba(217,178,74,.22),transparent 60%),radial-gradient(700px 500px at -10% 105%,rgba(217,178,74,.10),transparent 60%)}
+.frame{position:absolute;inset:28px;border:2px solid #D9B24A;border-radius:34px;opacity:.55}
+.wrap{position:absolute;inset:64px 70px;display:flex;flex-direction:column}
+.head{display:flex;align-items:center;gap:26px}
+.head img.l{width:112px}
+.head img.w{width:250px;border-radius:6px}
+.date{margin-left:auto;text-align:right}
+.date small{display:block;font-size:22px;letter-spacing:.18em;color:#9AA3B5;text-transform:uppercase}
+.date b{display:block;font-size:40px;font-weight:700;color:#EBCB6F;margin-top:4px}
+h1{margin-top:44px;font-size:58px;line-height:1.05;letter-spacing:-.02em;font-weight:800}
+h1 span{color:#EBCB6F}
+.sub{margin-top:14px;font-size:26px;color:#9AA3B5}
+.cards{margin-top:34px;display:flex;flex-direction:column;gap:18px}
+.card{background:linear-gradient(180deg,#1B2130,#141822);border:1.5px solid #3F4A63;border-radius:26px;padding:24px 28px;display:flex;align-items:center;gap:24px}
+.ic{width:74px;height:74px;border-radius:50%;background:#0A0C11;border:2px solid #D9B24A;display:flex;align-items:center;justify-content:center;font-size:38px}
+.mid{flex:1}
+.lg{font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:#EBCB6F;font-weight:700}
+.mt{font-size:35px;font-weight:700;margin-top:4px}
+.pk{font-size:27px;color:#9AA3B5;margin-top:4px}
+.pr{text-align:right}
+.pr b{font-size:52px;font-weight:800;color:#45E0A0;display:block;line-height:1}
+.pr small{font-size:21px;color:#9AA3B5}
+.hot{border-color:#D9B24A;box-shadow:0 0 0 4px rgba(217,178,74,.14)}
+.locked{display:flex;align-items:center;gap:22px;border:2px dashed #3F4A63;border-radius:26px;padding:24px 28px;color:#9AA3B5;font-size:29px}
+.locked .lk{width:74px;height:74px;border-radius:50%;background:#1B2130;display:flex;align-items:center;justify-content:center;font-size:36px}
+.locked b{color:#F4EFE3}
+.cta{margin-top:auto;background:linear-gradient(180deg,#EBCB6F,#D9B24A);color:#17120A;border-radius:30px;padding:30px 36px;text-align:center}
+.cta b{display:block;font-size:42px;font-weight:800;letter-spacing:-.01em}
+.cta span{display:block;font-size:26px;margin-top:8px;font-weight:600}
+.foot{margin-top:18px;text-align:center;font-size:19px;color:#6F788A}
+</style></head><body><div class=bg></div><div class=frame></div>
+<div class=wrap>
+ <div class=head><img class=l src="data:image/png;base64,{{LION}}"><img class=w src="data:image/png;base64,{{WORD}}"><div class=date><small>Jornada del</small><b>{{FECHA}}</b></div></div>
+ <h1>Los picks de mañana <span>ya están listos</span></h1>
+ <div class=sub>Un adelanto de lo que analizamos para ti</div>
+ <div class=cards>
+{{CARDS}}
+{{LOCKED}}
+ </div>
+ <div class=cta><b>Entra a tu área de miembros</b><span>LibraTips Premium · todos los picks, cuotas y análisis</span></div>
+ <div class=foot>Apuesta con responsabilidad · +18 · Los picks son análisis, no garantía de resultado</div>
+</div></body></html>
