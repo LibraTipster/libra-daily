@@ -1,0 +1,44 @@
+name: Imagen diaria Libra
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # 21:30 UTC = 16:30 hora de Lima
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1 = solo generar la imagen (no enviar a Telegram)"
+        default: "1"
+      target_date:
+        description: "Fecha AAAA-MM-DD (vacío = mañana en Lima)"
+        default: ""
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar navegador y fuentes
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-color-emoji
+      - name: Generar y enviar
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          MEMBERS_URL: ${{ secrets.MEMBERS_URL }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || '0' }}
+          TARGET_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.target_date || '' }}
+        run: python send_daily.py
+      - name: Guardar la imagen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: libra_diaria
+          path: libra_diaria.png
+          if-no-files-found: ignore
