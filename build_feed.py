@@ -109,31 +109,36 @@ def marca(x):
 # --- Diseño compacto para el área de miembros (más filas visibles, controles arriba más bajos) ---
 COMPACT_CSS = """
 .top{position:sticky;top:0;z-index:30}
-.top .wrap{padding-block:5px;gap:8px}
-.lion{width:32px!important}
-.wm{width:104px!important}
+.stick{position:sticky;top:0;z-index:30;background:#0A0C11;border-bottom:1px solid #1d2433;box-shadow:0 8px 8px -8px rgba(0,0,0,.7)}
+.stick .top{position:static}
+.top .wrap{padding-block:5px;gap:8px;flex-wrap:nowrap}
+.lion{width:30px!important}
 .brand{gap:8px}
-.brand .cap{font-size:11px!important;margin-top:1px!important}
+.wm{width:84px!important}
+.brand .cap{font-size:11px!important;margin-top:0!important;white-space:nowrap}
+@media (min-width:520px){.brand>div{display:flex;align-items:center;gap:10px}}
 .icon-btn{width:34px;height:34px;border-radius:10px}
 .icon-btn svg{width:17px;height:17px}
 .wrap.page{padding-block:8px 18px!important;padding-inline:12px}
+.stick .wrap{padding-inline:12px}
 .layout{gap:0}
-.ctl{position:sticky;top:46px;z-index:20;background:#0A0C11;padding:8px 0 6px;box-shadow:0 6px 10px -6px rgba(0,0,0,.7)}
+.ctl{padding:7px 0}
 .ctl>*{margin-top:0!important;margin-bottom:0!important}
 .ctl>*+*{margin-top:6px!important}
-.modes{padding:3px!important}
-.modes button{min-height:32px!important;font-size:14px}
+@media (min-width:920px){.ctl{max-width:430px}}
+.modes{padding:3px!important;display:flex!important;gap:2px}
+.modes button{min-height:32px!important;font-size:14px;flex:1 1 auto!important;justify-content:center;white-space:nowrap}
+.modes button span{white-space:nowrap;flex:none}
 .day{padding:4px 2px!important;border-radius:10px!important}
 .day .d1{font-size:16px!important}
 .day .d2{font-size:11px!important}
 .day .d3{font-size:11px!important;margin-top:2px!important;padding:0 6px!important}
 .day .d3 .w{display:none!important}
-.sports{gap:6px!important;margin-top:8px!important}
+.sports{gap:6px!important;margin-top:0!important}
 .sport{flex-direction:column!important;gap:0!important;padding:5px 4px!important;border-radius:12px!important;justify-content:center;min-height:46px}
 .sport .badge{display:none!important}
 .sport .s-name{font-size:14px!important}
 .sport .s-n{font-size:11.5px!important;white-space:nowrap}
-@media (min-width:720px){.sport{flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:0 8px!important}.sport .badge{display:grid!important;width:28px!important;height:28px!important}.sport .ico{width:20px!important;height:20px!important}}
 .toggle,.seg button{min-height:32px!important}
 .filters{gap:4px 10px!important;margin-top:8px!important}
 .viewseg{margin-top:8px!important}
@@ -152,16 +157,20 @@ COMPACT_JS = """
   function wrap(){
     if(busy)return;busy=true;
     try{
-      document.querySelectorAll('.list-pane').forEach(function(lp){
-        if(lp.querySelector(':scope>.ctl'))return;
-        var kids=[].filter.call(lp.children,function(c){return c.matches('.modes,.days')});
-        if(!kids.length)return;
-        var w=document.createElement('div');w.className='ctl';
-        lp.insertBefore(w,kids[0]);
-        kids.forEach(function(k){w.appendChild(k)});
-      });
-    }catch(e){}
-    busy=false;
+      var app=document.getElementById('app');if(!app)return;
+      var top=app.querySelector(':scope>.top'),lp=app.querySelector('.list-pane'),lay=app.querySelector('.layout');
+      if(!top||!lp||!lay)return;
+      if(app.querySelector(':scope>.stick'))return;
+      if(lay.classList.contains('has-sel')&&window.innerWidth<920)return;
+      var kids=[].filter.call(lp.children,function(c){return c.matches('.modes,.days')});
+      if(!kids.length)return;
+      var st=document.createElement('div');st.className='stick';
+      var cw=document.createElement('div');cw.className='wrap';
+      var ct=document.createElement('div');ct.className='ctl';
+      app.insertBefore(st,top);st.appendChild(top);
+      kids.forEach(function(k){ct.appendChild(k)});
+      cw.appendChild(ct);st.appendChild(cw);
+    }catch(e){}finally{busy=false}
   }
   new MutationObserver(wrap).observe(document.documentElement,{childList:true,subtree:true});
   wrap();
