@@ -1,0 +1,28 @@
+name: Liquidar picks
+
+on:
+  schedule:
+    - cron: "10 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "1 = probar sin escribir en Notion"
+        default: "0"
+
+concurrency:
+  group: liquidar
+  cancel-in-progress: false
+
+jobs:
+  liquidar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Liquidar con datos reales
+        run: python liquidar.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DRY: ${{ github.event.inputs.dry || '0' }}
