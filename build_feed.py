@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lee las propuestas de Claude desde Notion y deja _site/data.json CIFRADO (AES-GCM) para el área de miembros.
 Env: NOTION_TOKEN, MEMBERS_KEY. Opcional: SAMPLE=1 (datos de ejemplo, sin Notion), OUT (carpeta, por defecto _site)."""
-import base64, datetime as dt, hashlib, hmac, json, os, urllib.request, urllib.error
+import base64, datetime as dt, hashlib, hmac, json, os, re, urllib.request, urllib.error
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -95,16 +95,94 @@ def encrypt(obj, passphrase):
     ct = AESGCM(key).encrypt(iv, plain, None)
     return {"v": 1, "iv": base64.b64encode(iv).decode(), "ct": base64.b64encode(ct).decode()}
 
+# --- Marca: en la app de miembros no se menciona a Claude ---
+def marca(x):
+    if isinstance(x, str):
+        return re.sub(r"Claude", "Libra", x.replace("claude.ai", "la app"))
+    if isinstance(x, list):
+        return [marca(i) for i in x]
+    if isinstance(x, dict):
+        return {k: marca(v) for k, v in x.items()}
+    return x
+
+
+# --- Diseño compacto para el área de miembros (más filas visibles, controles arriba más bajos) ---
+COMPACT_CSS = """
+.top{position:sticky;top:0;z-index:30}
+.top .wrap{padding-block:5px;gap:8px}
+.lion{width:32px!important}
+.wm{width:104px!important}
+.brand{gap:8px}
+.brand .cap{font-size:11px!important;margin-top:1px!important}
+.icon-btn{width:34px;height:34px;border-radius:10px}
+.icon-btn svg{width:17px;height:17px}
+.wrap.page{padding-block:8px 18px!important;padding-inline:12px}
+.layout{gap:0}
+.ctl{position:sticky;top:46px;z-index:20;background:#0A0C11;padding:8px 0 6px;box-shadow:0 6px 10px -6px rgba(0,0,0,.7)}
+.ctl>*{margin-top:0!important;margin-bottom:0!important}
+.ctl>*+*{margin-top:6px!important}
+.modes{padding:3px!important}
+.modes button{min-height:32px!important;font-size:14px}
+.day{padding:4px 2px!important;border-radius:10px!important}
+.day .d1{font-size:16px!important}
+.day .d2{font-size:11px!important}
+.day .d3{font-size:11px!important;margin-top:2px!important;padding:0 6px!important}
+.day .d3 .w{display:none!important}
+.sports{gap:6px!important;margin-top:8px!important}
+.sport{flex-direction:column!important;gap:0!important;padding:5px 4px!important;border-radius:12px!important;justify-content:center;min-height:46px}
+.sport .badge{display:none!important}
+.sport .s-name{font-size:14px!important}
+.sport .s-n{font-size:11.5px!important;white-space:nowrap}
+@media (min-width:720px){.sport{flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:0 8px!important}.sport .badge{display:grid!important;width:28px!important;height:28px!important}.sport .ico{width:20px!important;height:20px!important}}
+.toggle,.seg button{min-height:32px!important}
+.filters{gap:4px 10px!important;margin-top:8px!important}
+.viewseg{margin-top:8px!important}
+.league{margin-top:12px!important}
+.league h2 b{font-size:19px!important}
+.match{padding:8px 6px!important;gap:8px!important}
+.m-time{font-size:19px!important}
+.foot .wrap{padding-block:6px!important}
+.foot p{font-size:11px!important;line-height:1.35!important}
+.foot img{width:24px!important;height:auto}
+"""
+
+COMPACT_JS = """
+(function(){
+  var busy=false;
+  function wrap(){
+    if(busy)return;busy=true;
+    try{
+      document.querySelectorAll('.list-pane').forEach(function(lp){
+        if(lp.querySelector(':scope>.ctl'))return;
+        var kids=[].filter.call(lp.children,function(c){return c.matches('.modes,.days')});
+        if(!kids.length)return;
+        var w=document.createElement('div');w.className='ctl';
+        lp.insertBefore(w,kids[0]);
+        kids.forEach(function(k){w.appendChild(k)});
+      });
+    }catch(e){}
+    busy=false;
+  }
+  new MutationObserver(wrap).observe(document.documentElement,{childList:true,subtree:true});
+  wrap();
+})();
+"""
+
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     props = sample() if os.environ.get("SAMPLE") == "1" else fetch_props()
+    props = marca(props)
     print(f"{len(props)} propuestas")
     os.makedirs(OUT, exist_ok=True)
     page = open(os.path.join(here, "site", "index.html"), encoding="utf8").read()
     for ph, name in (("__LION__", "lion"), ("__WORD__", "word")):
         with open(os.path.join(here, "assets", name + ".b64")) as f:
             page = page.replace(ph, "data:image/png;base64," + f.read().strip())
+    page = page.replace("Propuestas de Claude", "Propuestas")
+    page = marca(page)
+    page = page.replace("</head>", "<style id=\"compacto\">" + COMPACT_CSS + "</style></head>", 1)
+    page = page.replace("</body>", "<script>" + COMPACT_JS + "</script></body>", 1)
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf8") as f:
         f.write(page)
     with open(os.path.join(OUT, "data.json"), "w") as f:
