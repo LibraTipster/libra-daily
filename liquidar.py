@@ -73,7 +73,8 @@ ALIAS = {"copenhagen": "kobenhavn", "internazionale": "inter", "munchen": "munic
 def norm(s):
     s = (s or "").lower().translate(_TR)
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
-    s = re.sub(r"[^a-z0-9. ]+", " ", s).replace(".", " ")
+    s = re.sub(r"[^a-z0-9. ]+", " ", s)
+    s = re.sub(r"(?<!\d)\.|\.(?!\d)", " ", s)
     s = " " + re.sub(r"\s+", " ", s).strip() + " "
     for k, v in ALIAS.items():
         s = s.replace(" " + k + " ", " " + v + " ")
