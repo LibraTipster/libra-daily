@@ -48,6 +48,19 @@ def flat(page):
     return row
 
 
+def max4(rows):
+    """Regla de la casa: como máximo 4 picks Normal por partido (los de mayor probabilidad). Valor no se toca."""
+    keep, per = [], {}
+    for r in sorted(rows, key=lambda r: -(r.get("Prob. estimada (%)") or 0)):
+        if r.get("Sección") != "Valor":
+            k = (r.get("date:Fecha:start"), r.get("Partido"))
+            per[k] = per.get(k, 0) + 1
+            if per[k] > 4:
+                continue
+        keep.append(r)
+    return keep
+
+
 def fetch_props():
     token = os.environ["NOTION_TOKEN"]
     since = (lima_today() - dt.timedelta(days=DAYS_BACK)).isoformat()
@@ -62,7 +75,7 @@ def fetch_props():
         r = api(f"data_sources/{PROPUESTAS_DS}/query", body, token)
         rows += [flat(p) for p in r["results"]]
         if not r.get("has_more"):
-            return rows
+            return max4(rows)
         cur = r["next_cursor"]
 
 
