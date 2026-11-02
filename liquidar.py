@@ -34,7 +34,7 @@ def notion(method, path, body=None):
             msg = e.read().decode()[:300]
             if e.code in (429, 500, 502, 503, 504) and i < 3:
                 time.sleep(2 * (i + 1)); continue
-            raise SystemExit(f"Notion HTTP {e.code} {method} {path}: {msg}")
+            raise RuntimeError(f"Notion HTTP {e.code} {method} {path}: {msg}")
 
 
 def query_all(ds, flt):
@@ -444,7 +444,11 @@ def main():
     log(f"Propuestas liquidadas: {settled}; sin liquidar: {len(left)}")
 
     # espejo en Picks de Claude (ledger)
-    led = query_all(LEDGER_DS, {"property": "Resultado", "select": {"equals": "Pendiente"}})
+    try:
+        led = query_all(LEDGER_DS, {"property": "Resultado", "select": {"equals": "Pendiente"}})
+    except RuntimeError as e:
+        log("AVISO: Picks de Claude no es accesible para la integración (conectarla en Notion: ··· > Conexiones). " + str(e)[:120])
+        led = []
     mir = 0
     for pg in led:
         pr = pg["properties"]
