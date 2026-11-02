@@ -64,27 +64,54 @@ def rt(s):
 
 
 # ---------------------------------------------------------------- utilidades de nombres
+_TR = str.maketrans({"ø": "o", "æ": "ae", "ð": "d", "þ": "th", "ł": "l", "đ": "d", "ß": "ss", "œ": "oe"})
+ALIAS = {"copenhagen": "kobenhavn", "internazionale": "inter", "munchen": "munich", "koln": "cologne", "psg": "paris saint germain",
+         "man": "manchester", "utd": "united", "sporting cp": "sporting", "malmo ff": "malmo", "gothenburg": "goteborg",
+         "spurs": "tottenham", "wolves": "wolverhampton", "sheffield utd": "sheffield united"}
+
+
 def norm(s):
-    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z0-9. ]+", " ", s)
+    s = (s or "").lower().translate(_TR)
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    s = re.sub(r"[^a-z0-9. ]+", " ", s).replace(".", " ")
+    s = " " + re.sub(r"\s+", " ", s).strip() + " "
+    for k, v in ALIAS.items():
+        s = s.replace(" " + k + " ", " " + v + " ")
+    return s.strip()
 
 
 STOP = {"fc", "cf", "ac", "as", "sc", "cd", "ca", "us", "ud", "rc", "sv", "fk", "bk", "if", "afc", "club", "de", "the", "real", "sporting",
-        "atletico", "athletic", "united", "city", "ii", "sp", "go", "ce", "al", "mg", "la", "el", "los", "del", "y", "vs", "1", "2", "sk", "ff", "fk"}
+        "atletico", "athletic", "united", "city", "sp", "go", "ce", "al", "mg", "la", "el", "los", "del", "y", "vs", "sk", "ff", "cp", "sad", "ik", "fodbold",
+        "stockholm", "town", "rovers", "wanderers", "county", "borussia", "deportivo", "atletica", "calcio", "futbol", "football", "kv", "krc", "rsc", "ssc"}
+RES = re.compile(r"\b(ii|iii|b|u17|u18|u19|u20|u21|u23|jong|reserves?|youth|women|w|res)\b")
+
+
+def is_res(n):
+    return bool(RES.search(norm(n)))
+
+
+def words(n):
+    return [w for w in RES.sub(" ", norm(n)).split() if w]
 
 
 def toks(name):
-    return [w for w in norm(name).split() if len(w) >= 4 and w not in STOP]
+    return [w for w in words(name) if len(w) >= 3 and w not in STOP]
 
 
 def sim(a, b):
+    if is_res(a) != is_res(b): return 0.0
     ta, tb = set(toks(a)), set(toks(b))
     s1 = 0.0
     if ta and tb:
-        com = {x for x in ta if any(x == y or (len(x) >= 5 and (x in y or y in x)) for y in tb)}
+        com = {x for x in ta if any(x == y or (len(x) >= 5 and len(y) >= 5 and (x in y or y in x)) for y in tb)}
         s1 = len(com) / min(len(ta), len(tb))
+    wa, wb = words(a), words(b)
+    s3 = 0.0
+    if wa and wb:
+        sh, lo = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+        if all(lo[i].startswith(sh[i]) for i in range(len(sh))): s3 = 0.9
     s2 = difflib.SequenceMatcher(None, norm(a), norm(b)).ratio()
-    return max(s1, s2 if s2 >= 0.78 else 0)
+    return max(s1, s3, s2 if s2 >= 0.78 else 0)
 
 
 def http(url):
@@ -152,19 +179,32 @@ def scoreboard(d):
     return _sb[k]
 
 
+def ev_names(e):
+    return [c["team"].get("displayName", "") for c in e["competitions"][0]["competitors"]]
+
+
 def find_event(home, away, d):
-    best = None
+    evs = []
     for off in (0, 1, -1):
-        for e in scoreboard(d + dt.timedelta(days=off)):
-            comp = e["competitions"][0]["competitors"]
-            if len(comp) != 2: continue
-            names = [c["team"].get("displayName", "") for c in comp]
-            s_direct = min(sim(home, names[0]), sim(away, names[1]))
-            s_swap = min(sim(home, names[1]), sim(away, names[0]))
-            s = max(s_direct, s_swap)
-            if s >= 0.5 and (best is None or s > best[0]):
-                best = (s, e, s_swap > s_direct)
-    return best
+        evs += scoreboard(d + dt.timedelta(days=off))
+    best, anchor = None, []
+    for e in evs:
+        names = ev_names(e)
+        if len(names) != 2: continue
+        s_direct = min(sim(home, names[0]), sim(away, names[1]))
+        s_swap = min(sim(home, names[1]), sim(away, names[0]))
+        s = max(s_direct, s_swap)
+        if s >= 0.5 and (best is None or s > best[0]):
+            best = (s, e, s_swap > s_direct)
+        else:
+            h = max(sim(home, names[0]), sim(home, names[1])); a = max(sim(away, names[0]), sim(away, names[1]))
+            if max(h, a) >= 0.85 and (is_res(home) == is_res(away)):
+                anchor.append((e, sim(home, names[1]) > sim(home, names[0]) if h >= a else sim(away, names[0]) > sim(away, names[1])))
+    if best: return best
+    if len(anchor) == 1:
+        log(f"  (ancla) {home} vs {away} ~ {' vs '.join(ev_names(anchor[0][0]))}")
+        return (0.85, anchor[0][0], anchor[0][1])
+    return None
 
 
 _det = {}
