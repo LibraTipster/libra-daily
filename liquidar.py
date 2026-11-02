@@ -203,7 +203,7 @@ def find_event(home, away, d):
                 anchor.append((e, sim(home, names[1]) > sim(home, names[0]) if h >= a else sim(away, names[0]) > sim(away, names[1])))
     if best: return best
     if len(anchor) == 1:
-        log(f"  (ancla) {home} vs {away} ~ {' vs '.join(ev_names(anchor[0][0]))}")
+        log("  (ancla) usada")
         return (0.85, anchor[0][0], anchor[0][1])
     return None
 
@@ -435,10 +435,10 @@ def main():
             res, info = None, f"error: {e}"
         if res is None:
             left[pg["id"]] = info
-            if info != "no terminado": log(f"  · pendiente: {p['partido']} | {p['seleccion']} → {info}")
+            if info != "no terminado": log(f"  · pendiente: ...{pg['id'][-6:]} → {info}")
             continue
         dato[pg["id"]] = (res, info)
-        log(f"  {res}: {p['partido']} | {p['seleccion']} | {info}")
+        log(f"  {res}: ...{pg['id'][-6:]} | {p['deporte']}")
         applied = False
         if not DRY and not blocked:
             props = {"Resultado": {"select": {"name": res}}, "Dato real": {"rich_text": rt(info)}}
@@ -448,16 +448,11 @@ def main():
             except RuntimeError as e:
                 if "403" not in str(e): raise
                 blocked = True
-                log("AVISO: la integración de Notion no tiene permiso de edición; los resultados quedan en liquidacion.json para que la tarea diaria los aplique")
+                log("AVISO: la integración de Notion no tiene permiso de edición (activar 'Update content' en la integración)")
         queue.append({"id": pg["id"], "url": "https://app.notion.com/p/" + pg["id"].replace("-", ""), "partido": p["partido"], "fecha": p["fecha"][:10],
                       "seleccion": p["seleccion"], "resultado": res, "dato_real": info, "aplicado": applied})
         settled += 1
     log(f"Propuestas liquidadas: {settled}; sin liquidar: {len(left)}")
-    if not DRY:
-        todo = [q for q in queue if not q["aplicado"]]
-        with open("liquidacion.json", "w", encoding="utf-8") as f:
-            json.dump({"nota": "Resultados reales ya evaluados (ESPN) que aun no estan escritos en Notion. La tarea diaria de Libra los aplica en Propuestas Claude y Picks de Claude.", "pendientes_de_aplicar": todo}, f, ensure_ascii=False, indent=1)
-        log(f"liquidacion.json: {len(todo)} resultados por aplicar")
 
     # espejo en Picks de Claude (ledger)
     try:
