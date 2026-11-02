@@ -193,7 +193,7 @@ def _limpia_alerta(txt):
         f = re.sub(r"Chequeo (Parcial|Completo)", "", f, flags=re.I)
         f = re.sub(r"\+?\s*Más only", "", f, flags=re.I)
         f = f.strip(" ;,.:+")
-        if len(f) < 10 or INTERNO.search(f) or re.search(r"se escribe igual|m[ií]nima|ventaja\s*(:|no\b|sí\b)|piso\s*\d", f, re.I):
+        if len(f) < 10 or INTERNO.search(f) or CTX_INTERNO.search(f) or re.search(r"se escribe igual|m[ií]nima|ventaja\s*(:|no\b|sí\b)|piso\s*\d", f, re.I):
             continue
         if f.startswith("calculada"):
             f = "probabilidad " + f
