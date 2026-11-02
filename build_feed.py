@@ -244,7 +244,7 @@ def _desde_razonamiento(r):
 def porque(row):
     manual = (row.get("Por qué") or "").strip()
     # Solo se publica el "Por qué" investigado (contexto real). Sin él no se inventa uno con las cifras del modelo.
-    return manual
+    return re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", manual)  # Notion convierte dominios en enlaces markdown
     l = _lineas(row.get("Argumento"))
     partes = []
     ctx = _contexto(l.get("contexto", ""))
