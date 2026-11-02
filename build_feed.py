@@ -348,7 +348,7 @@ PQ_JS = (
     'function PQ(a){var t=String(a.porque||"").split(/\\n/).map(function(x){return x.trim()}).filter(Boolean);'
     'if(!t.length)return"";var c=a.chk,k="Completo"===c?"Contexto verificado":"Parcial"===c?"Contexto verificado en parte":"Contexto sin verificar";'
     'return\'<details class="fold porque"><summary>Por qué</summary><div class="sec">\'+t.map(function(x){return"<p>"+m(x)+"</p>"}).join("")'
-    '+\'<span class="pq-chk">\'+k+"</span></div></details>"}'
+    '+"</div></details>"}'
 )
 
 
