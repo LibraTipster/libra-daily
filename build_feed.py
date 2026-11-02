@@ -173,24 +173,27 @@ def _contexto(txt):
 
 
 def _limpia_alerta(txt):
+    """Deja solo lo que le sirve al miembro: sin notas internas, jerga ni restos de formato."""
     if not txt:
         return ""
-    t = txt.strip().rstrip(".")
+    t = txt.strip()
     if re.match(r"^(ninguna|sin alertas?)", t, re.I):
         return ""
-    t = "; ".join(x for x in re.split(r";\s*", t) if not INTERNO.search(x))
-    for pat, rep in JERGA:
-        t = re.sub(pat, rep, t, flags=re.I)
-    t = re.sub(r"ventaja (sí|si|no)\s*\([^)]*\)", "", t, flags=re.I)
-    t = re.sub(r"\bVentaja:\s*(sí|no)\s*(\([^)]*\))?\.?", "", t, flags=re.I)
-    t = re.sub(r"\+?\s*Más only", "", t, flags=re.I)
-    t = re.sub(r"^calculada a partir de otra línea\s*\+?\s*", "Probabilidad calculada a partir de otra línea. ", t)
-    t = re.sub(r"[;,]\s*[;,]", ";", t)
-    t = re.sub(r"\s+", " ", t).strip(" ;,.+")
-    if not t:
-        return ""
-    t = t[0].upper() + t[1:]
-    return t + "."
+    t = re.sub(r"\bDERIVADA\b:?\s*(\([^)]*\)|cola, fuera de tabla)?", "probabilidad calculada a partir de otra línea", t)
+    t = t.replace("el feed marca", "la fuente marca")
+    out = []
+    for f in re.split(r"[;.]\s+|;|\.$", t):
+        f = re.sub(r"\(\s*\)", "", f)
+        f = re.sub(r"Chequeo (Parcial|Completo)", "", f, flags=re.I)
+        f = re.sub(r"\+?\s*Más only", "", f, flags=re.I)
+        f = f.strip(" ;,.:+")
+        if len(f) < 10 or INTERNO.search(f) or re.search(r"se escribe igual|m[ií]nima|ventaja\s*(:|no\b|sí\b)|piso\s*\d", f, re.I):
+            continue
+        if f.startswith("calculada"):
+            f = "probabilidad " + f
+        if f not in out:
+            out.append(f)
+    return ("; ".join(out) + ".") if out else ""
 
 
 def _modelo_mercado(l, row):
