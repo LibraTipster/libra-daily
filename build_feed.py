@@ -243,8 +243,8 @@ def _desde_razonamiento(r):
 
 def porque(row):
     manual = (row.get("Por qué") or "").strip()
-    if manual:
-        return manual
+    # Solo se publica el "Por qué" investigado (contexto real). Sin él no se inventa uno con las cifras del modelo.
+    return manual
     l = _lineas(row.get("Argumento"))
     partes = []
     ctx = _contexto(l.get("contexto", ""))
