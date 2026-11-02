@@ -422,6 +422,7 @@ def main():
     pages = query_all(PROP_DS, flt)
     log(f"Pendientes con fecha <= hoy: {len(pages)}")
     settled, left, dato = 0, {}, {}
+    blocked, queue = False, []
     for pg in pages:
         pr = pg["properties"]
         p = {"id": pg["id"], "partido": txt(pr.get("Partido")), "seleccion": txt(pr.get("Selección")), "mercado": txt(pr.get("Mercado")),
@@ -438,11 +439,25 @@ def main():
             continue
         dato[pg["id"]] = (res, info)
         log(f"  {res}: {p['partido']} | {p['seleccion']} | {info}")
-        if not DRY:
+        applied = False
+        if not DRY and not blocked:
             props = {"Resultado": {"select": {"name": res}}, "Dato real": {"rich_text": rt(info)}}
-            notion("PATCH", f"pages/{pg['id']}", {"properties": props})
+            try:
+                notion("PATCH", f"pages/{pg['id']}", {"properties": props})
+                applied = True
+            except RuntimeError as e:
+                if "403" not in str(e): raise
+                blocked = True
+                log("AVISO: la integración de Notion no tiene permiso de edición; los resultados quedan en liquidacion.json para que la tarea diaria los aplique")
+        queue.append({"id": pg["id"], "url": "https://app.notion.com/p/" + pg["id"].replace("-", ""), "partido": p["partido"], "fecha": p["fecha"][:10],
+                      "seleccion": p["seleccion"], "resultado": res, "dato_real": info, "aplicado": applied})
         settled += 1
     log(f"Propuestas liquidadas: {settled}; sin liquidar: {len(left)}")
+    if not DRY:
+        todo = [q for q in queue if not q["aplicado"]]
+        with open("liquidacion.json", "w", encoding="utf-8") as f:
+            json.dump({"nota": "Resultados reales ya evaluados (ESPN) que aun no estan escritos en Notion. La tarea diaria de Libra los aplica en Propuestas Claude y Picks de Claude.", "pendientes_de_aplicar": todo}, f, ensure_ascii=False, indent=1)
+        log(f"liquidacion.json: {len(todo)} resultados por aplicar")
 
     # espejo en Picks de Claude (ledger)
     try:
