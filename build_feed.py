@@ -189,8 +189,8 @@ def _limpia_alerta(txt):
     t = t.replace("el feed marca", "la fuente marca")
     out = []
     for f in re.split(r"[;.]\s+|;|\.$", t):
-        f = re.sub(r"\(\s*\)", "", f)
         f = re.sub(r"Chequeo (Parcial|Completo)", "", f, flags=re.I)
+        f = re.sub(r"\(\s*\)", "", f)
         f = re.sub(r"\+?\s*Más only", "", f, flags=re.I)
         f = f.strip(" ;,.:+")
         if len(f) < 10 or INTERNO.search(f) or CTX_INTERNO.search(f) or re.search(r"se escribe igual|m[ií]nima|ventaja\s*(:|no\b|sí\b)|piso\s*\d", f, re.I):
@@ -263,7 +263,7 @@ def porque(row):
     sin_ctx = not ctx or re.search(r"NO CONFIRMADO", l.get("contexto", ""), re.I)
     if sin_ctx and not (l.get("contexto") and "Valor v2" in l.get("contexto", "")):
         partes.append("Sin contexto de plantel ni forma verificado: se apoya solo en el modelo y el precio.")
-    return "\n".join(x for x in partes if x).strip().replace("en el feed", "en la fuente").replace("el feed", "la fuente")
+    return "\n".join(x for x in partes if x).strip().replace("en el feed", "en la fuente").replace("el feed", "la fuente").replace("feed ", "fuente ")
 
 
 # --- Diseño compacto para el área de miembros (más filas visibles, controles arriba más bajos) ---
