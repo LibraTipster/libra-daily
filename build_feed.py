@@ -109,6 +109,8 @@ def marca(x):
 # --- "Por qué": razón en español claro por pick (se respeta el campo "Por qué" de Notion si el análisis lo escribió) ---
 INTERNO = re.compile(r"Worker|cumple\s*=|\bEV\b|OddsPapi|tarea local|presupuesto|corrida|cuotas\.activo|navegador|bo3\.gg|/es/|/matchup", re.I)
 
+CTX_INTERNO = re.compile(r"Z-?Code|conservadora|Brecha modelo|🔥|[≥]", re.I)
+
 JERGA = [
     (r"\bDERIVADA\b", "calculada a partir de otra línea"),
     (r"Chequeo (Parcial|Completo)", ""),
@@ -151,6 +153,10 @@ def _contexto(txt):
     if not txt:
         return ""
     t = txt.strip().rstrip(".")
+    t = " ".join(f for f in re.split(r"(?<=[.;])\s+", t) if not CTX_INTERNO.search(f)).strip(" ;")
+    t = re.sub(r"\s+con WebSearch en esta corrida", "", t)
+    if not t:
+        return ""
     t = re.sub(r"(\S[^,;()]*?)\s+(\d+(?:\.\d+)?)\s*pts/p\s*\(([GEP]{3,8})\)",
                lambda m: f"{m.group(1).strip()} suma {m.group(2)} puntos por partido ({_forma(m.group(3))})", t)
     t = re.sub(r"(?<=, )([A-Za-zÀ-ÿ.]+)\s+(\d+(?:\.\d+)?)\s*\(([GEP]{3,8})\)",
@@ -257,7 +263,7 @@ def porque(row):
     sin_ctx = not ctx or re.search(r"NO CONFIRMADO", l.get("contexto", ""), re.I)
     if sin_ctx and not (l.get("contexto") and "Valor v2" in l.get("contexto", "")):
         partes.append("Sin contexto de plantel ni forma verificado: se apoya solo en el modelo y el precio.")
-    return "\n".join(x for x in partes if x).strip()
+    return "\n".join(x for x in partes if x).strip().replace("en el feed", "en la fuente").replace("el feed", "la fuente")
 
 
 # --- Diseño compacto para el área de miembros (más filas visibles, controles arriba más bajos) ---
