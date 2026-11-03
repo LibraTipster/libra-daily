@@ -42,3 +42,4 @@ jobs:
           name: libra_diaria
           path: libra_diaria.png
           if-no-files-found: ignore
+          retention-days: 1
