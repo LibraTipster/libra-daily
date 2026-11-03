@@ -87,7 +87,7 @@ def main():
             if txt(r["properties"].get("Resultado")) not in ("", "Pendiente"):
                 continue
             n += 1
-            print(f"Duplicado descartado: {k[0]} | {k[1]} | {k[2]} ({r['id'][:8]})")
+            print(f"Duplicado descartado: {k[0]} ({r['id'][:8]})")
             if not DRY:
                 notion("PATCH", f"pages/{r['id']}", {"properties": {"Decisión": {"select": {"name": "Descartada"}}}})
     print(f"Revisadas {len(rows)} filas; duplicados descartados: {n}")
