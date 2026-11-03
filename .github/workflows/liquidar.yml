@@ -33,3 +33,10 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DRY: ${{ github.event.inputs.dry || '0' }}
+      - name: Lecciones automaticas de los picks Perdio
+        if: always()
+        continue-on-error: true
+        run: python leccion.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DRY: ${{ github.event.inputs.dry || '0' }}
