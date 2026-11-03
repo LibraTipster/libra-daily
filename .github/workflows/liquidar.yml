@@ -26,3 +26,10 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DRY: ${{ github.event.inputs.dry || '0' }}
+      - name: Descartar duplicados de Propuestas Claude
+        if: always()
+        continue-on-error: true
+        run: python dedupe.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DRY: ${{ github.event.inputs.dry || '0' }}
