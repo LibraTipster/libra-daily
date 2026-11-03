@@ -76,6 +76,9 @@ def main():
         fecha = (val(p.get("Fecha")) or "")[:10]
         merc = val(p.get("Mercado")) or "Otro"
         dato = val(p.get("Dato real")) or ""
+        if not dato.strip():  # picks liquidados a mano antes del 03/11: sin dato por fila, no se inventa la lección
+            cuenta["sin_dato_se_omite"] = cuenta.get("sin_dato_se_omite", 0) + 1
+            continue
         m = PAT.search(dato)
         pr, cu = val(p.get("Prob. estimada (%)")), val(p.get("Cuota casa"))
         base = f"{fecha} · {merc} · prob {pr if pr is not None else '?'}% · cuota {cu if cu is not None else '?'}"
