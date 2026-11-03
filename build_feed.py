@@ -29,6 +29,8 @@ def flat(page):
     """Página de la API de Notion -> fila con el mismo formato que las vistas que lee la app."""
     row = {"url": "https://app.notion.com/p/" + page["id"].replace("-", "")}
     for name, v in page["properties"].items():
+        if name == "Lección":  # post-mortem interno: no se publica a miembros
+            continue
         t, x = v["type"], v.get(v["type"])
         if t in ("title", "rich_text"):
             row[name] = "".join(s.get("plain_text", "") for s in x)
