@@ -27,9 +27,9 @@ def api(path, body, token):
 
 def flat(page):
     """Página de la API de Notion -> fila con el mismo formato que las vistas que lee la app."""
-    row = {"url": "https://app.notion.com/p/" + page["id"].replace("-", "")}
+    row = {"url": "https://app.notion.com/p/" + page["id"].replace("-", ""), "_creado": page.get("created_time")}
     for name, v in page["properties"].items():
-        if name == "Lección":  # post-mortem interno: no se publica a miembros
+        if name in ("Lección", "Nota del crítico", "Prob. crítico (%)"):  # internos: no se publican a miembros
             continue
         t, x = v["type"], v.get(v["type"])
         if t in ("title", "rich_text"):
@@ -48,6 +48,30 @@ def flat(page):
         elif t == "formula":
             row[name] = x.get(x["type"])
     return row
+
+
+CRITICO_RETENCION_H = 6
+
+
+def compuerta(rows):
+    """Última palabra del Crítico Libra: Rechazado no se publica; sin veredicto se retiene hasta 6 h desde que se creó
+    la fila (pasado ese tiempo sale igual para no vaciar la app si el Crítico falla). El veredicto no viaja a miembros."""
+    ahora = dt.datetime.now(dt.timezone.utc)
+    out = []
+    for r in rows:
+        ver = r.pop("Veredicto crítico", None)
+        creado = r.pop("_creado", None)
+        if ver == "Rechazado":
+            continue
+        if not ver:
+            try:
+                edad = (ahora - dt.datetime.fromisoformat(creado.replace("Z", "+00:00"))).total_seconds() / 3600
+            except Exception:
+                edad = 99
+            if edad < CRITICO_RETENCION_H:
+                continue
+        out.append(r)
+    return out
 
 
 def max4(rows):
@@ -77,7 +101,7 @@ def fetch_props():
         r = api(f"data_sources/{PROPUESTAS_DS}/query", body, token)
         rows += [flat(p) for p in r["results"]]
         if not r.get("has_more"):
-            return max4(rows)
+            return max4(compuerta(rows))
         cur = r["next_cursor"]
 
 
