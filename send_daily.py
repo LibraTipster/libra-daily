@@ -58,6 +58,19 @@ def prop(p, name):
     return None
 
 
+def publicable(x):
+    """Compuerta del Crítico Libra: Rechazado no sale; sin veredicto se retiene 6 h desde que se creó la fila."""
+    if x.get("ver") == "Rechazado":
+        return False
+    if not x.get("ver"):
+        try:
+            edad = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(x["creado"].replace("Z", "+00:00"))).total_seconds() / 3600
+        except Exception:
+            edad = 99
+        return edad >= 6
+    return True
+
+
 def fetch_rows(target):
     token = os.environ["NOTION_TOKEN"]
     hdr = {"Authorization": f"Bearer {token}", "Notion-Version": NOTION_VERSION, "Content-Type": "application/json"}
@@ -79,11 +92,12 @@ def fetch_rows(target):
                 "seccion": prop(p, "Sección") or "Normal", "fuego": bool(prop(p, "Fuego")),
                 "prob": prop(p, "Prob. estimada (%)"), "cuota": prop(p, "Cuota casa"),
                 "resultado": prop(p, "Resultado") or "Pendiente",
+                "ver": prop(p, "Veredicto crítico"), "creado": pg.get("created_time"),
             })
         if not r.get("has_more"):
             break
         cursor = r["next_cursor"]
-    return [x for x in rows if x["partido"] and x["resultado"] == "Pendiente"]
+    return [x for x in rows if x["partido"] and x["resultado"] == "Pendiente" and publicable(x)]
 
 
 def pick_teaser(rows):
