@@ -382,6 +382,16 @@ COMPACT_CSS = """
 #up.on{opacity:1;pointer-events:auto}
 #up svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion: reduce){.lg-chev,.lgrp,#up{transition:none}}
+
+.lg-flag{flex:none;width:28px;height:19px;border-radius:5px;box-shadow:0 0 0 1px rgba(255,255,255,.16),0 3px 10px rgba(0,0,0,.45);transition:transform .15s}
+.lg-ico{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--surface-2);font-size:16px;line-height:1}
+.lgrp[style*="--ac"]{border-left:3px solid var(--ac)}
+.lgrp[style*="--ac"].open .lg-head{background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 16%,transparent),transparent 65%)}
+.lgrp[style*="--ac"]:hover .lg-flag{transform:scale(1.06)}
+.m-lg-top{display:flex!important;align-items:center;gap:6px}
+.m-lg-top .lg-flag{width:18px;height:12px;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+.m-lg-top span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){.lg-flag{transition:none}}
 """
 
 COMPACT_JS = """
@@ -441,6 +451,127 @@ def parchea(page):
     return page
 
 
+FLAGS_JS = r'''var LGF=(function(){
+function R(x,y,w,h,f){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"/>'}
+function C(x,y,r,f){return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+f+'"/>'}
+function H(){var a=arguments,h=16/a.length,s='';for(var i=0;i<a.length;i++)s+=R(0,i*h,24,h+.05,a[i]);return s}
+function V(){var a=arguments,w=24/a.length,s='';for(var i=0;i<a.length;i++)s+=R(i*w,0,w+.05,16,a[i]);return s}
+function X(bg,c1,c2){return R(0,0,24,16,bg)+(c2?R(6,0,4,16,c1)+R(0,6,24,4,c1)+R(7,0,2,16,c2)+R(0,7,24,2,c2):R(6,0,4,16,c1)+R(0,6,24,4,c1))}
+function N(bg,cr,inn){return R(0,0,24,16,bg)+R(6,0,4,16,cr)+R(0,6,24,4,cr)+(inn?R(7,0,2,16,inn)+R(0,7,24,2,inn):'')}
+var UJ=R(0,0,24,16,'#012169')+'<path d="M0 0L24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/><path d="M0 0L24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.2"/>'+R(10,0,4,16,'#fff')+R(0,6,24,4,'#fff')+R(10.8,0,2.4,16,'#C8102E')+R(0,6.8,24,2.4,'#C8102E');
+function stripes(n,a,b){var s='',h=16/n;for(var i=0;i<n;i++)s+=R(0,i*h,24,h+.05,i%2?b:a);return s}
+var F={
+ en:[R(0,0,24,16,'#fff')+R(10,0,4,16,'#CE1124')+R(0,6,24,4,'#CE1124'),'#CE1124'],
+ gb:[UJ,'#012169'],
+ sc:[R(0,0,24,16,'#0065BD')+'<path d="M0 0L24 16M24 0L0 16" stroke="#fff" stroke-width="2.6"/>','#0065BD'],
+ wl:[H('#fff','#00B140')+C(12,8,3.2,'#D30731'),'#00B140'],
+ ie:[V('#169B62','#fff','#FF883E'),'#169B62'],
+ es:[R(0,0,24,16,'#AA151B')+R(0,4,24,8,'#F1BF00')+R(5,6.5,3,3,'#AD1519'),'#F1BF00'],
+ it:[V('#009246','#fff','#CE2B37'),'#009246'],
+ de:[H('#000','#DD0000','#FFCE00'),'#DD0000'],
+ fr:[V('#0055A4','#fff','#EF4135'),'#0055A4'],
+ nl:[H('#AE1C28','#fff','#21468B'),'#F26522'],
+ pt:[R(0,0,24,16,'#FF0000')+R(0,0,9.6,16,'#006600')+C(9.6,8,3,'#FFE000')+C(9.6,8,1.6,'#fff'),'#006600'],
+ be:[V('#000','#FDDA24','#EF3340'),'#FDDA24'],
+ se:[N('#006AA7','#FECC00'),'#FECC00'],
+ no:[R(0,0,24,16,'#BA0C2F')+R(6,0,4,16,'#fff')+R(0,6,24,4,'#fff')+R(7,0,2,16,'#00205B')+R(0,7,24,2,'#00205B'),'#BA0C2F'],
+ dk:[N('#C8102E','#fff'),'#C8102E'],
+ fi:[N('#fff','#003580'),'#003580'],
+ is:[N('#02529C','#fff','#DC1E35'),'#02529C'],
+ ch:[R(0,0,24,16,'#D52B1E')+R(10,3,4,10,'#fff')+R(7,6,10,4,'#fff'),'#D52B1E'],
+ at:[H('#ED2939','#fff','#ED2939'),'#ED2939'],
+ tr:[R(0,0,24,16,'#E30A17')+C(9,8,4.4,'#fff')+C(10.2,8,3.5,'#E30A17')+C(14,8,1.4,'#fff'),'#E30A17'],
+ gr:[stripes(9,'#0D5EAF','#fff').replace(/<rect x="0" y="0" width="24"[^>]*\/>/,'')+R(0,0,9.5,9,'#0D5EAF')+R(3.5,0,2.5,9,'#fff')+R(0,3.3,9.5,2.4,'#fff'),'#0D5EAF'],
+ pl:[H('#fff','#DC143C'),'#DC143C'],
+ cz:[H('#fff','#D7141A')+'<path d="M0 0L12 8L0 16z" fill="#11457E"/>','#11457E'],
+ sk:[H('#fff','#0B4EA2','#EE1C25')+'<path d="M5 4h5v5.2Q7.5 11.4 5 9.2z" fill="#EE1C25" stroke="#fff" stroke-width=".6"/>','#0B4EA2'],
+ si:[H('#fff','#0B4EA2','#EE1C25')+'<path d="M4.5 3.5h4.5v4.2Q6.7 10 4.5 7.7z" fill="#0B4EA2" stroke="#fff" stroke-width=".6"/>','#0B4EA2'],
+ hr:[H('#FF0000','#fff','#171796'),'#FF0000'],
+ rs:[H('#C6363C','#0C4076','#fff'),'#C6363C'],
+ hu:[H('#CE2939','#fff','#477050'),'#CE2939'],
+ ro:[V('#002B7F','#FCD116','#CE1126'),'#FCD116'],
+ bg:[H('#fff','#00966E','#D62612'),'#00966E'],
+ ua:[H('#0057B7','#FFD700'),'#0057B7'],
+ ru:[H('#fff','#0039A6','#D52B1E'),'#0039A6'],
+ il:[R(0,0,24,16,'#fff')+R(0,2,24,2.4,'#0038B8')+R(0,11.6,24,2.4,'#0038B8')+C(12,8,2.6,'#0038B8')+C(12,8,1.7,'#fff'),'#0038B8'],
+ eg:[H('#CE1126','#fff','#000'),'#CE1126'],
+ ma:[R(0,0,24,16,'#C1272D')+C(12,8,3.4,'none').replace('fill="none"','fill="none" stroke="#006233" stroke-width="1"'),'#C1272D'],
+ sa:[R(0,0,24,16,'#006C35')+R(5,10.5,14,1.2,'#fff')+R(7,5.5,10,1.3,'#fff'),'#006C35'],
+ qa:[R(0,0,24,16,'#8A1538')+'<path d="M0 0H8L11 1.6L8 3.2L11 4.8L8 6.4L11 8L8 9.6L11 11.2L8 12.8L11 14.4L8 16H0z" fill="#fff"/>','#8A1538'],
+ ae:[R(0,0,24,16,'#00732F')+R(0,5.33,24,5.34,'#fff')+R(0,10.67,24,5.33,'#000')+R(0,0,6,16,'#FF0000'),'#FF0000'],
+ us:[stripes(7,'#B22234','#fff')+R(0,0,11,8.6,'#3C3B6E')+C(2.5,2,.7,'#fff')+C(5.5,2,.7,'#fff')+C(8.5,2,.7,'#fff')+C(4,4.3,.7,'#fff')+C(7,4.3,.7,'#fff')+C(2.5,6.6,.7,'#fff')+C(5.5,6.6,.7,'#fff')+C(8.5,6.6,.7,'#fff'),'#3C3B6E'],
+ ca:[R(0,0,24,16,'#fff')+R(0,0,6,16,'#D80621')+R(18,0,6,16,'#D80621')+'<path d="M12 3.5l1.4 3 2-.7-.9 3.4h-5l-.9-3.4 2 .7z" fill="#D80621"/>','#D80621'],
+ mx:[V('#006847','#fff','#CE1126')+C(12,8,1.8,'#8C6D1F'),'#006847'],
+ br:[R(0,0,24,16,'#009C3B')+'<path d="M12 1.6L22 8L12 14.4L2 8z" fill="#FFDF00"/>'+C(12,8,3.6,'#002776')+'<path d="M8.6 7.2Q12 6 15.4 8.2" stroke="#fff" stroke-width=".7" fill="none"/>','#FFDF00'],
+ ar:[H('#74ACDF','#fff','#74ACDF')+C(12,8,1.8,'#F6B40E'),'#74ACDF'],
+ co:[R(0,0,24,16,'#FCD116')+R(0,8,24,4,'#003893')+R(0,12,24,4,'#CE1126'),'#FCD116'],
+ ec:[R(0,0,24,16,'#FFDD00')+R(0,8,24,4,'#034EA2')+R(0,12,24,4,'#ED1C24'),'#FFDD00'],
+ pe:[V('#D91023','#fff','#D91023'),'#D91023'],
+ cl:[R(0,0,24,8,'#fff')+R(0,8,24,8,'#D52B1E')+R(0,0,8,8,'#0039A6')+C(4,4,1.5,'#fff'),'#D52B1E'],
+ uy:[stripes(7,'#fff','#0038A8')+R(0,0,9,8.6,'#fff')+C(4.5,4.3,2,'#FCD116'),'#0038A8'],
+ py:[H('#D52B1E','#fff','#0038A8')+C(12,8,1.6,'#6b8e23'),'#D52B1E'],
+ bo:[H('#D52B1E','#F9E300','#007934'),'#F9E300'],
+ ve:[H('#FFCC00','#00247D','#CF142B'),'#00247D'],
+ jp:[R(0,0,24,16,'#fff')+C(12,8,4.6,'#BC002D'),'#BC002D'],
+ kr:[R(0,0,24,16,'#fff')+'<path d="M7.5 8a4.5 4.5 0 0 1 9 0z" fill="#CD2E3A"/><path d="M7.5 8a4.5 4.5 0 0 0 9 0z" fill="#0047A0"/>','#CD2E3A'],
+ cn:[R(0,0,24,16,'#DE2910')+'<path d="M5 2.4l1 2.9-2.5-1.8h3.1L4 5.3z" fill="#FFDE00"/>'+C(9.2,3,.6,'#FFDE00')+C(10.4,5,.6,'#FFDE00')+C(10.4,7.4,.6,'#FFDE00')+C(9.2,9.4,.6,'#FFDE00'),'#DE2910'],
+ hk:[R(0,0,24,16,'#DE2910')+C(12,8,3.4,'#fff')+C(12,8,1,'#DE2910'),'#DE2910'],
+ in:[H('#FF9933','#fff','#138808')+'<circle cx="12" cy="8" r="2" fill="none" stroke="#000080" stroke-width=".7"/>','#FF9933'],
+ au:[R(0,0,24,16,'#012169')+R(0,0,12,8,'#012169')+'<path d="M0 0L12 8M12 0L0 8" stroke="#fff" stroke-width="1.6"/><path d="M0 0L12 8M12 0L0 8" stroke="#C8102E" stroke-width=".6"/>'+R(5,0,2,8,'#fff')+R(0,3,12,2,'#fff')+R(5.5,0,1,8,'#C8102E')+R(0,3.5,12,1,'#C8102E')+C(18,4,.9,'#fff')+C(15,10,.9,'#fff')+C(20,11.5,.9,'#fff')+C(17.5,13.8,.9,'#fff'),'#012169'],
+ nz:[R(0,0,24,16,'#012169')+'<path d="M0 0L12 8M12 0L0 8" stroke="#fff" stroke-width="1.6"/><path d="M0 0L12 8M12 0L0 8" stroke="#C8102E" stroke-width=".6"/>'+R(5,0,2,8,'#fff')+R(0,3,12,2,'#fff')+R(5.5,0,1,8,'#C8102E')+R(0,3.5,12,1,'#C8102E')+C(17,4,.9,'#CC142B')+C(15,9,.9,'#CC142B')+C(20,10,.9,'#CC142B'),'#012169'],
+ za:[H('#E03C31','#001489')+'<path d="M0 0L9 8L0 16z" fill="#000"/>','#007749'],
+ eu:[R(0,0,24,16,'#003399')+(function(){var s='';for(var i=0;i<12;i++){var a=i*Math.PI/6;s+=C((12+4.8*Math.sin(a)).toFixed(2),(8-4.8*Math.cos(a)).toFixed(2),.75,'#FFCC00')}return s})(),'#003399'],
+ world:['<defs><radialGradient id="lgw" cx=".35" cy=".3"><stop offset="0" stop-color="#6fb7ff"/><stop offset="1" stop-color="#1a4fa0"/></radialGradient></defs>'+R(0,0,24,16,'url(#lgw)')+'<path d="M3 5Q7 3 9 6T7 10 4 9zM13 3Q17 3 19 6T16 9 14 6zM12 11Q15 10 17 13T12 14z" fill="#5bd17c" opacity=".9"/>','#3b82f6'],
+ ten:[R(0,0,24,16,'#0b3d2e')+C(12,8,5.2,'#D4E157')+'<path d="M7.4 5.8Q10.5 8 7.4 10.4M16.6 5.8Q13.5 8 16.6 10.4" stroke="#fff" stroke-width=".9" fill="none"/>','#D4E157'],
+ esp:[R(0,0,24,16,'#2b1b5a')+'<rect x="5" y="4.5" width="14" height="8" rx="3.5" fill="#8b5cf6"/><path d="M8 8.5h3M9.5 7v3" stroke="#fff" stroke-width="1"/>'+C(14.5,7.8,.8,'#fff')+C(16.5,9.2,.8,'#fff'),'#8b5cf6'],
+ bsk:[R(0,0,24,16,'#3a1f0c')+C(12,8,5.4,'#F97316')+'<path d="M6.6 8H17.4M12 2.6V13.4M8 4Q10.5 8 8 12M16 4Q13.5 8 16 12" stroke="#3a1f0c" stroke-width=".7" fill="none"/>','#F97316']
+};
+var RULES=[
+ [/brasil|brazil|brasileir|copa do brasil|paulista|carioca|\brio\b|sao paulo|são paulo/,'br'],
+ [/rusia|russia|russian|moscow|mosc[uú]/,'ru'],
+ [/premier league|championship|league (one|two|1|2)|efl|fa cup|carabao|inglat|englan|national league|women.?s super/,'en'],
+ [/scottish|escoc|scotland|premiership/,'sc'],[/wales|gales|cymru/,'wl'],[/irland|ireland/,'ie'],
+ [/laliga|la liga|segunda division|copa del rey|supercopa de espa|espa[nñ]a|\bacb\b|spain|primera federacion/,'es'],
+ [/serie a\b(?! (ecuador|brasil))|serie b\b(?! brasil)|serie c\b|coppa italia|italia|italy|lega pro|\broma\b|roma\b|torino|turin|turín|firenze|florence|milan|milán|napoli/,'it'],
+ [/bundesliga 2|2\. bundesliga|bundesliga(?! austria)|dfb|alemania|german|berlin|munich|m[uü]nchen|hamburg|stuttgart/,'de'],
+ [/ligue (1|2)|coupe de france|francia|france|roland|paris|par[ií]s|bercy|metz|lyon|marseill|montpellier|strasbourg|toulouse|bordeaux|nantes/,'fr'],
+ [/eredivisie|eerste divisie|knvb|holanda|paises bajos|pa[ií]ses bajos|netherlands|rotterdam|amsterdam|hague|den haag/,'nl'],
+ [/primeira liga|liga portugal|segunda liga|ta[cç]a|portugal|lisbo|porto/,'pt'],
+ [/pro league|jupiler|belg|bruselas|brussels|antwerp|amberes/,'be'],
+ [/allsvenskan|superettan|svenska|suecia|sweden|stockholm/,'se'],[/eliteserien|noruega|norway|oslo/,'no'],
+ [/superliga dinamarca|superliga danesa|denmark|dinamarca|danish|copenh|kopenh/,'dk'],[/veikkausliiga|finland|finlandia/,'fi'],[/iceland|islandia/,'is'],
+ [/super league suiza|swiss|suiza|switzerland|basel|basilea|gstaad|geneva|ginebra|zurich|z[uü]rich/,'ch'],
+ [/austria|bundesliga austr|vienna|viena|kitzb/,'at'],
+ [/s[uü]per lig|tff|turqu|turkey|istanbul|estambul/,'tr'],[/super league (grecia|greece)|greece|grecia|grie/,'gr'],
+ [/ekstraklasa|polonia|poland/,'pl'],[/czech|chequia|rep[uú]blica checa|fortuna liga/,'cz'],[/slovak|eslovaquia/,'sk'],[/sloven|eslovenia/,'si'],
+ [/croa|hnl/,'hr'],[/serbia|srbija/,'rs'],[/hungr|nb i\b/,'hu'],[/rumania|rumanía|romania|liga i\b/,'ro'],[/bulgar/,'bg'],[/ukrain|ucrania/,'ua'],
+ [/israel/,'il'],[/egipt|egypt/,'eg'],[/marruecos|morocco|botola/,'ma'],[/arabia|saudi|roshn/,'sa'],[/qatar|doha|stars league/,'qa'],[/emiratos|uae|dubai|abu dhabi|arabian gulf/,'ae'],
+ [/liga profesional argentina|argentin|buenos aires|copa argentina|primera nacional|c[oó]rdoba/,'ar'],
+ [/betplay|colombia|dimayor|bogot|cali\b|medell|primera a colombia|primera b colombia/,'co'],
+ [/ecuador|liga pro ecuador|quito|guayaquil/,'ec'],[/per[uú]|liga 1 peru|liga 1 per|lima\b/,'pe'],[/chile|santiago|primera division chile|campeonato chileno/,'cl'],
+ [/uruguay|montevideo/,'uy'],[/paraguay|asunci/,'py'],[/bolivia/,'bo'],[/venezuela/,'ve'],
+ [/\bmls\b|usl|nwsl|estados unidos|usa|u\.s\.|\bnba\b|ncaa|indian wells|miami|us open|cincinnati|washington|atlanta|dallas|houston|san diego|new york|los angeles/,'us'],
+ [/canad|toronto|montreal/,'ca'],[/liga mx|mexic|m[eé]xic|monterrey|acapulco|guadalajara|canc[uú]n|los cabos/,'mx'],
+ [/j\.? ?league|j1|j2|jap[oó]n|japan|tokyo|tokio|osaka/,'jp'],[/k league|corea|korea|seoul|se[uú]l|\blck\b/,'kr'],
+ [/china|csl|shanghai|beijing|pek[ií]n|wuhan|zhuhai|chengdu|shenzhen|nanjing|\blpl\b/,'cn'],[/hong kong/,'hk'],[/india|chennai|mumbai|pune|delhi|isl\b/,'in'],
+ [/a-league|australia|melbourne|sydney|brisbane|adelaide|perth/,'au'],[/nueva zelanda|new zealand|auckland/,'nz'],[/sud[aá]frica|south africa|psl\b/,'za'],
+ [/london|wimbledon|queen.?s|eastbourne|nottingham|birmingham|reino unido|united kingdom/,'gb'],
+ [/madrid|barcelona|marbella|valencia|mallorca/,'es'],
+ [/champions league|europa league|conference league|uefa|euroliga|euroleague|eurocup|\blec\b/,'eu'],
+ [/libertadores|sudamericana|conmebol|mundial|world cup|copa mundial|fifa|amistoso|friendly/,'world']
+];
+function nrm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+function code(league,sport){
+  var n=nrm(league);
+  for(var i=0;i<RULES.length;i++){ if(RULES[i][0].test(n)) return RULES[i][1]; }
+  var sp=nrm(sport);
+  return /tenis/.test(sp)?'ten':/e-?sport/.test(sp)?'esp':/basq|basket/.test(sp)?'bsk':'world';
+}
+function svg(c){var f=F[c]||F.world;return '<svg class="lg-flag" viewBox="0 0 24 16" width="26" height="17" role="img" aria-hidden="true" focusable="false"><g>'+f[0].replace(/id="lgw"/g,'id="lgw'+c+'"').replace(/#lgw\)/g,'#lgw'+c+')')+'</g></svg>'}
+return {F:F,code:code,html:function(l,s){return svg(code(l,s))},accent:function(l,s){return (F[code(l,s)]||F.world)[1]}};
+})();
+'''
+
 LG_HELPERS = r"""function LGSB(){return '<div class="searchbar"><input type="search" data-act="q" data-fid="q" placeholder="Buscar equipo, liga o mercado" aria-label="Buscar en el d\u00eda" autocomplete="off" value="'+m(T.lgq)+'"></div>'}
 function CRC(a){return a.crit?'<span class="crit '+("Aprobado"===a.crit?"ok":"rv")+'">\ud83e\uddd0 '+m(a.crit)+'</span>':""}
 function LGBK(h){var q=h.min;return q>=99999?4:q<360?0:q<720?1:q<1080?2:3}
@@ -448,14 +579,14 @@ var LGBN=[["Madrugada","00:00 \u2013 05:59"],["Ma\u00f1ana","06:00 \u2013 11:59"
 function LGOP(k){return !!T.lgq||(void 0===T.lgOpen[k]?!!T.lgDef[k]:!!T.lgOpen[k])}
 function LGPINS(){try{return JSON.parse(p("pins")||"[]")||[]}catch(a){return[]}}
 function LGMETA(l){var n=l.reduce(function(a,e){return a+e.picks.length},0),f=l[0].hour;return l.length+(1===l.length?" partido":" partidos")+" \u00b7 "+n+(1===n?" pick":" picks")+(f.min<99999?" \u00b7 desde "+m(f.label+" "+f.ap):"")}
-function LGGRP(k,t,meta,items,wl,def,pin,hot,row){T.lgKeys.push(k);T.lgDef[k]=!!def;var open=LGOP(k),pins=LGPINS(),pinned=pin&&pins.indexOf(pin)>=0;
-return '<section class="lgrp'+(open?" open":"")+'" aria-label="'+m(t)+'"><div class="lg-head"><button type="button" class="lg-t" data-act="lg" data-val="'+m(k)+'" data-fid="lg-'+m(k)+'" aria-expanded="'+open+'"><span class="lg-chev" aria-hidden="true"></span><span class="lg-main"><span class="lg-name">'+m(t)+'</span><span class="lg-meta">'+meta+'</span></span>'+(hot?'<em class="lg-fire">\ud83d\udd25 '+hot+'</em>':"")+'</button>'+(pin?'<button type="button" class="lg-pin" data-act="lgpin" data-val="'+m(pin)+'" data-fid="pin-'+m(pin)+'" aria-pressed="'+!!pinned+'" aria-label="'+(pinned?"Quitar liga fijada":"Fijar liga arriba")+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3.5 3.5V14H13v6l-1 1-1-1v-6H6.5v-1.5L10 9z"/></svg></button>':"")+'</div>'+(open?'<div class="lg-body">'+items.map(function(a){return row(a,wl)}).join("")+'</div>':"")+'</section>'}
+function LGGRP(k,t,meta,items,wl,def,pin,hot,row,ico,ac){T.lgKeys.push(k);T.lgDef[k]=!!def;var open=LGOP(k),pins=LGPINS(),pinned=pin&&pins.indexOf(pin)>=0;
+return '<section class="lgrp'+(open?" open":"")+'"'+(ac?' style="--ac:'+ac+'"':"")+' aria-label="'+m(t)+'"><div class="lg-head"><button type="button" class="lg-t" data-act="lg" data-val="'+m(k)+'" data-fid="lg-'+m(k)+'" aria-expanded="'+open+'"><span class="lg-chev" aria-hidden="true"></span>'+(ico||"")+'<span class="lg-main"><span class="lg-name">'+m(t)+'</span><span class="lg-meta">'+meta+'</span></span>'+(hot?'<em class="lg-fire">\ud83d\udd25 '+hot+'</em>':"")+'</button>'+(pin?'<button type="button" class="lg-pin" data-act="lgpin" data-val="'+m(pin)+'" data-fid="pin-'+m(pin)+'" aria-pressed="'+!!pinned+'" aria-label="'+(pinned?"Quitar liga fijada":"Fijar liga arriba")+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3.5 3.5V14H13v6l-1 1-1-1v-6H6.5v-1.5L10 9z"/></svg></button>':"")+'</div>'+(open?'<div class="lg-body">'+items.map(function(a){return row(a,wl)}).join("")+'</div>':"")+'</section>'}
 function LGLIST(s,r,vs,row){var pre=T.day+"|"+T.sport+"|"+T.view+"|",nHot=s.filter(function(a){return a.hot}).length,body="",pins=LGPINS();T.lgKeys=[];T.lgDef={};
-if("hora"===T.view){var bl=[[],[],[],[],[]];s.forEach(function(a){bl[LGBK(a.hour)].push(a)});bl.forEach(function(l,i){l.length&&(body+=LGGRP(pre+"b"+i,LGBN[i][0],LGMETA(l)+(LGBN[i][1]?" \u00b7 "+LGBN[i][1]:""),l,!0,!1,null,l.filter(function(a){return a.hot}).length,row))})}
+if("hora"===T.view){var bl=[[],[],[],[],[]];s.forEach(function(a){bl[LGBK(a.hour)].push(a)});bl.forEach(function(l,i){l.length&&(body+=LGGRP(pre+"b"+i,LGBN[i][0],LGMETA(l)+(LGBN[i][1]?" \u00b7 "+LGBN[i][1]:""),l,!0,!1,null,l.filter(function(a){return a.hot}).length,row,'<span class="lg-ico">'+["\ud83c\udf19","\ud83c\udf05","\u2600\ufe0f","\ud83c\udf03","\u23f3"][i]+'</span>',["#6D7BD8","#F59E0B","#FACC15","#8B5CF6","#9AA3B5"][i]))})}
 else{var lg={},lo=[];s.forEach(function(a){lg[a.league]||(lg[a.league]=[],lo.push(a.league)),lg[a.league].push(a)});
 lo.sort(function(a,b){var pa=pins.indexOf(a)>=0?0:1,pb=pins.indexOf(b)>=0?0:1;return pa-pb||lg[a][0].hour.min-lg[b][0].hour.min||a.localeCompare(b)});
-var hm=s.filter(function(a){return a.hot});hm.length&&!T.lgq&&(body+=LGGRP(pre+"hot","\ud83d\udd25 Destacados",LGMETA(hm),hm,!0,!0,null,0,row));
-lo.forEach(function(g){var l=lg[g];body+=LGGRP(pre+"l:"+g,g,LGMETA(l),l,!1,!1,g,l.filter(function(a){return a.hot}).length,row)})}
+var hm=s.filter(function(a){return a.hot});hm.length&&!T.lgq&&(body+=LGGRP(pre+"hot","Destacados",LGMETA(hm),hm,!0,!0,null,0,row,'<span class="lg-ico">\ud83d\udd25</span>',"#F97316"));
+lo.forEach(function(g){var l=lg[g];body+=LGGRP(pre+"l:"+g,g,LGMETA(l),l,!1,!1,g,l.filter(function(a){return a.hot}).length,row,LGF.html(g,T.sport),LGF.accent(g,T.sport))})}
 var all=T.lgKeys.length>0&&T.lgKeys.every(LGOP);
 return LGSB()+vs+'<div class="lgbar"><span class="lg-sum"><b>'+s.length+'</b> '+(1===s.length?"partido":"partidos")+' \u00b7 <b>'+r.length+'</b> '+(1===r.length?"pick":"picks")+(nHot?' \u00b7 <em>\ud83d\udd25 '+nHot+'</em>':"")+'</span><button type="button" class="lg-all" data-act="lgall" data-fid="lgall" data-all="'+(all?"open":"closed")+'"></button></div>'+body}
 document.addEventListener("input",function(t){var e=t.target;e&&e.getAttribute&&"q"===e.getAttribute("data-act")&&(T.lgq=e.value,Ea())});
@@ -480,7 +611,7 @@ def parchea_listas(page):
     # 4) lista: reemplaza hora/liga por acordeones
     a = page.index('if("hora"===T.view)return i+\'<section class="league" aria-label="Partidos por hora">')
     b = page.index('function ya(a){return"Pendiente"')
-    page = page[:a] + 'return LGLIST(s,r,i,o)}' + LG_HELPERS + page[b:]
+    page = page[:a] + 'return LGLIST(s,r,i,o)}' + FLAGS_JS + LG_HELPERS + page[b:]
     # 5) eventos
     sub('if("tgl"===n){var o=r.getAttribute("data-val");',
         'if("lg"===n){var lo=!!T.lgq||(void 0===T.lgOpen[s]?!!T.lgDef[s]:!!T.lgOpen[s]);return T.lgq||(T.lgOpen[s]=!lo),void Ea()}'
@@ -490,6 +621,8 @@ def parchea_listas(page):
     # 6) cursor del buscador al repintar
     sub('try{v.focus({preventScroll:!0})}catch(a){}',
         'try{v.focus({preventScroll:!0}),"INPUT"===v.tagName&&v.setSelectionRange&&v.setSelectionRange(v.value.length,v.value.length)}catch(a){}')
+    # 6b) bandera de la liga en las filas con liga visible
+    sub('(e?\'<small class="m-lg-top">\'+m(a.league)+"</small>":"")', '(e?\'<small class="m-lg-top">\'+LGF.html(a.league,a.sport)+"<span>"+m(a.league)+"</span></small>":"")')
     # 7) chip del Critico en cada pick
     sub('"</span>"+("Pendiente"!==a.res?ya(a):"")+\'</span></span><span class="ps-kpi">',
         '"</span>"+("Pendiente"!==a.res?ya(a):"")+CRC(a)+\'</span></span><span class="ps-kpi">')
