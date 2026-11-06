@@ -343,6 +343,45 @@ COMPACT_CSS = """
 .pc-body:has(details.porque) .why-row{display:none!important}
 .pq-crit{margin-top:8px;font-size:13px;font-weight:700}
 .pq-chk{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;opacity:.8}
+
+.crit{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:500;line-height:1.25;white-space:nowrap}
+.crit.ok{background:var(--pos-bg);color:var(--pos)}.crit.rv{background:var(--warn-bg);color:var(--warn)}
+.crit-box{margin-top:12px;border-radius:14px;padding:10px 14px;font-size:14px;line-height:1.45}
+.crit-box b{display:block;font-weight:600}.crit-box p{margin-top:3px;color:var(--fg)}
+.crit-box.ok{background:var(--pos-bg)}.crit-box.rv{background:var(--warn-bg)}
+.searchbar{margin-top:10px}
+.searchbar input{width:100%;min-height:42px;border-radius:14px;border:1px solid var(--line-strong);background:var(--surface);color:var(--fg);padding:0 14px;font:400 15px var(--f-body);-webkit-appearance:none;appearance:none}
+.searchbar input::placeholder{color:var(--muted)}
+.searchbar input:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold)}
+.lgbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.lg-all{border:1px solid var(--line-strong);background:var(--surface);color:var(--fg);border-radius:12px;min-height:38px;padding:0 14px;font:500 14px var(--f-body);cursor:pointer;white-space:nowrap}
+.lg-all:hover{border-color:var(--gold)}
+.lg-all::before{content:"Abrir todo"}
+.lg-all[data-all="open"]::before{content:"Cerrar todo"}
+.lg-sum{margin:8px 4px 2px;font-size:13.5px;color:var(--muted)}
+.lg-sum b{color:var(--fg);font-weight:600}.lg-sum em{font-style:normal;color:var(--gold-2)}
+.lgrp{margin-top:10px;border:1px solid var(--line);border-radius:18px;background:var(--surface);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.lgrp:hover,.lgrp.open{border-color:var(--line-strong)}
+.lgrp.open{box-shadow:var(--shadow)}
+.lg-head{display:flex;align-items:stretch}
+.lg-t{all:unset;box-sizing:border-box;flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 6px 12px 14px;cursor:pointer}
+.lg-t:focus-visible,.lg-pin:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;border-radius:16px}
+.lg-chev{flex:none;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;margin-right:2px}
+.lgrp.open .lg-chev{transform:rotate(45deg);border-color:var(--gold-2)}
+.lg-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+.lg-name{font:600 16px/1.25 var(--f-body);color:var(--fg);overflow-wrap:anywhere}
+.lg-meta{font-size:12.5px;color:var(--muted)}
+.lg-fire{flex:none;font-style:normal;font-size:12.5px;font-weight:600;color:var(--gold-2);background:var(--brand-soft);border-radius:999px;padding:2px 9px}
+.lg-pin{all:unset;box-sizing:border-box;flex:none;width:46px;display:grid;place-items:center;cursor:pointer;color:var(--line-strong)}
+.lg-pin svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.lg-pin:hover{color:var(--muted)}
+.lg-pin[aria-pressed="true"]{color:var(--gold-2)}.lg-pin[aria-pressed="true"] svg{fill:currentColor}
+.lg-body{padding:2px 10px 10px;border-top:1px solid var(--line);background:rgba(0,0,0,.12)}
+.lg-body .match{margin-top:8px!important}
+#up{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:1px solid var(--gold);background:var(--surface-2);color:var(--gold-2);display:grid;place-items:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s;z-index:40;box-shadow:var(--shadow)}
+#up.on{opacity:1;pointer-events:auto}
+#up svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-reduced-motion: reduce){.lg-chev,.lgrp,#up{transition:none}}
 """
 
 COMPACT_JS = """
@@ -373,7 +412,7 @@ COMPACT_JS = """
 
 
 PQ_JS = (
-    'function PQ(a){var cr=a.crit?\'<div class="pq-crit">\\ud83e\\uddd0 Cr\\u00edtico: \'+a.crit+"</div>":"";var t=String(a.porque||"").split(/\\n/).map(function(x){return x.trim()}).filter(Boolean);'
+    'function PQ(a){var cr=a.crit?\'<div class="crit-box \'+("Aprobado"===a.crit?"ok":"rv")+\'"><b>\\ud83e\\uddd0 Cr\\u00edtico Libra: \'+a.crit+"</b><p>"+("Aprobado"===a.crit?"Revis\\u00f3 el pick y lo dej\\u00f3 pasar sin reservas.":"Revis\\u00f3 el pick y lo dej\\u00f3 pasar, pero con una reserva: apuesta con cautela.")+"</p></div>":"";var t=String(a.porque||"").split(/\\n/).map(function(x){return x.trim()}).filter(Boolean);'
     'if(!t.length)return cr;var c=a.chk,k="Completo"===c?"Contexto verificado":"Parcial"===c?"Contexto verificado en parte":"Contexto sin verificar";'
     'return cr+\'<details class="fold porque"><summary>Por qué</summary><div class="sec">\'+t.map(function(x){return"<p>"+m(x)+"</p>"}).join("")'
     '+"</div></details>"}'
@@ -402,6 +441,61 @@ def parchea(page):
     return page
 
 
+LG_HELPERS = r"""function LGSB(){return '<div class="searchbar"><input type="search" data-act="q" data-fid="q" placeholder="Buscar equipo, liga o mercado" aria-label="Buscar en el d\u00eda" autocomplete="off" value="'+m(T.lgq)+'"></div>'}
+function CRC(a){return a.crit?'<span class="crit '+("Aprobado"===a.crit?"ok":"rv")+'">\ud83e\uddd0 '+m(a.crit)+'</span>':""}
+function LGBK(h){var q=h.min;return q>=99999?4:q<360?0:q<720?1:q<1080?2:3}
+var LGBN=[["Madrugada","00:00 \u2013 05:59"],["Ma\u00f1ana","06:00 \u2013 11:59"],["Tarde","12:00 \u2013 17:59"],["Noche","18:00 \u2013 23:59"],["Sin hora",""]];
+function LGOP(k){return !!T.lgq||(void 0===T.lgOpen[k]?!!T.lgDef[k]:!!T.lgOpen[k])}
+function LGPINS(){try{return JSON.parse(p("pins")||"[]")||[]}catch(a){return[]}}
+function LGMETA(l){var n=l.reduce(function(a,e){return a+e.picks.length},0),f=l[0].hour;return l.length+(1===l.length?" partido":" partidos")+" \u00b7 "+n+(1===n?" pick":" picks")+(f.min<99999?" \u00b7 desde "+m(f.label+" "+f.ap):"")}
+function LGGRP(k,t,meta,items,wl,def,pin,hot,row){T.lgKeys.push(k);T.lgDef[k]=!!def;var open=LGOP(k),pins=LGPINS(),pinned=pin&&pins.indexOf(pin)>=0;
+return '<section class="lgrp'+(open?" open":"")+'" aria-label="'+m(t)+'"><div class="lg-head"><button type="button" class="lg-t" data-act="lg" data-val="'+m(k)+'" data-fid="lg-'+m(k)+'" aria-expanded="'+open+'"><span class="lg-chev" aria-hidden="true"></span><span class="lg-main"><span class="lg-name">'+m(t)+'</span><span class="lg-meta">'+meta+'</span></span>'+(hot?'<em class="lg-fire">\ud83d\udd25 '+hot+'</em>':"")+'</button>'+(pin?'<button type="button" class="lg-pin" data-act="lgpin" data-val="'+m(pin)+'" data-fid="pin-'+m(pin)+'" aria-pressed="'+!!pinned+'" aria-label="'+(pinned?"Quitar liga fijada":"Fijar liga arriba")+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3.5 3.5V14H13v6l-1 1-1-1v-6H6.5v-1.5L10 9z"/></svg></button>':"")+'</div>'+(open?'<div class="lg-body">'+items.map(function(a){return row(a,wl)}).join("")+'</div>':"")+'</section>'}
+function LGLIST(s,r,vs,row){var pre=T.day+"|"+T.sport+"|"+T.view+"|",nHot=s.filter(function(a){return a.hot}).length,body="",pins=LGPINS();T.lgKeys=[];T.lgDef={};
+if("hora"===T.view){var bl=[[],[],[],[],[]];s.forEach(function(a){bl[LGBK(a.hour)].push(a)});bl.forEach(function(l,i){l.length&&(body+=LGGRP(pre+"b"+i,LGBN[i][0],LGMETA(l)+(LGBN[i][1]?" \u00b7 "+LGBN[i][1]:""),l,!0,!1,null,l.filter(function(a){return a.hot}).length,row))})}
+else{var lg={},lo=[];s.forEach(function(a){lg[a.league]||(lg[a.league]=[],lo.push(a.league)),lg[a.league].push(a)});
+lo.sort(function(a,b){var pa=pins.indexOf(a)>=0?0:1,pb=pins.indexOf(b)>=0?0:1;return pa-pb||lg[a][0].hour.min-lg[b][0].hour.min||a.localeCompare(b)});
+var hm=s.filter(function(a){return a.hot});hm.length&&!T.lgq&&(body+=LGGRP(pre+"hot","\ud83d\udd25 Destacados",LGMETA(hm),hm,!0,!0,null,0,row));
+lo.forEach(function(g){var l=lg[g];body+=LGGRP(pre+"l:"+g,g,LGMETA(l),l,!1,!1,g,l.filter(function(a){return a.hot}).length,row)})}
+var all=T.lgKeys.length>0&&T.lgKeys.every(LGOP);
+return LGSB()+vs+'<div class="lgbar"><span class="lg-sum"><b>'+s.length+'</b> '+(1===s.length?"partido":"partidos")+' \u00b7 <b>'+r.length+'</b> '+(1===r.length?"pick":"picks")+(nHot?' \u00b7 <em>\ud83d\udd25 '+nHot+'</em>':"")+'</span><button type="button" class="lg-all" data-act="lgall" data-fid="lgall" data-all="'+(all?"open":"closed")+'"></button></div>'+body}
+document.addEventListener("input",function(t){var e=t.target;e&&e.getAttribute&&"q"===e.getAttribute("data-act")&&(T.lgq=e.value,Ea())});
+(function(){var u=document.createElement("button");u.type="button";u.id="up";u.setAttribute("aria-label","Volver arriba");u.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>';document.body.appendChild(u);u.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"})});window.addEventListener("scroll",function(){u.classList.toggle("on",window.scrollY>700)},{passive:!0})})();
+"""
+
+
+def parchea_listas(page):
+    """Horas 24 h bien ordenadas, ligas y bloques horarios desplegables (cerrados), buscador, fijar ligas y chip del Cr\u00edtico."""
+    def sub(old, new):
+        nonlocal page
+        assert page.count(old) == 1, "parche no aplicable: " + old[:60]
+        page = page.replace(old, new)
+    # 1) hora: acepta "HH:MM" en 24 h ademas de AM/PM
+    sub('if(!t)return{min:99999,label:e?e.replace(/\\s*\\(.*$/,""):"\u2014",ap:"",approx:/aprox|confirmar/i.test(e)};var r=+t[1]',
+        'if(!t){var q24=/(\\d{1,2}):(\\d{2})/.exec(e);if(!q24||+q24[1]>23||+q24[2]>59)return{min:99999,label:e?e.replace(/\\s*\\(.*$/,""):"\u2014",ap:"",approx:/aprox|confirmar/i.test(e)};var h24=+q24[1],n24=+q24[2];return{min:60*h24+n24,label:(h24%12||12)+":"+S(n24),ap:h24>=12?"PM":"AM",approx:/aprox|confirmar/i.test(e)}}var r=+t[1]')
+    # 2) estado
+    sub('open:{},sel:null,pick:null', 'open:{},lgOpen:{},lgDef:{},lgKeys:[],lgq:"",sel:null,pick:null')
+    # 3) busqueda sobre las filas del dia
+    sub('var r=a.filter(function(a){return a.sport===T.sport&&ra(a)&&na(a)});',
+        'var r=a.filter(function(a){return a.sport===T.sport&&ra(a)&&na(a)});if(T.lgq){var qn=y(T.lgq);r=r.filter(function(a){return y(a.match+" "+a.league+" "+a.sel+" "+a.market).indexOf(qn)>=0});if(!r.length)return LGSB()+\'<div class="empty"><b>Sin resultados para \\u00ab\'+m(T.lgq)+\'\\u00bb.</b><br>Busca solo en \'+m(T.sport)+\' de este d\\u00eda. Prueba con otro nombre o cambia de deporte.</div>\'}')
+    # 4) lista: reemplaza hora/liga por acordeones
+    a = page.index('if("hora"===T.view)return i+\'<section class="league" aria-label="Partidos por hora">')
+    b = page.index('function ya(a){return"Pendiente"')
+    page = page[:a] + 'return LGLIST(s,r,i,o)}' + LG_HELPERS + page[b:]
+    # 5) eventos
+    sub('if("tgl"===n){var o=r.getAttribute("data-val");',
+        'if("lg"===n){var lo=!!T.lgq||(void 0===T.lgOpen[s]?!!T.lgDef[s]:!!T.lgOpen[s]);return T.lgq||(T.lgOpen[s]=!lo),void Ea()}'
+        'if("lgall"===n){var ao=T.lgKeys.length&&T.lgKeys.every(LGOP);return T.lgKeys.forEach(function(k){T.lgOpen[k]=!ao}),void Ea()}'
+        'if("lgpin"===n){var pn=LGPINS(),pi=pn.indexOf(s);return pi>=0?pn.splice(pi,1):pn.push(s),p("pins",JSON.stringify(pn)),void Ea()}'
+        'if("tgl"===n){var o=r.getAttribute("data-val");')
+    # 6) cursor del buscador al repintar
+    sub('try{v.focus({preventScroll:!0})}catch(a){}',
+        'try{v.focus({preventScroll:!0}),"INPUT"===v.tagName&&v.setSelectionRange&&v.setSelectionRange(v.value.length,v.value.length)}catch(a){}')
+    # 7) chip del Critico en cada pick
+    sub('"</span>"+("Pendiente"!==a.res?ya(a):"")+\'</span></span><span class="ps-kpi">',
+        '"</span>"+("Pendiente"!==a.res?ya(a):"")+CRC(a)+\'</span></span><span class="ps-kpi">')
+    return page
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     props = sample() if os.environ.get("SAMPLE") == "1" else fetch_props()
@@ -415,6 +509,7 @@ def main():
         with open(os.path.join(here, "assets", name + ".b64")) as f:
             page = page.replace(ph, "data:image/png;base64," + f.read().strip())
     page = parchea(page)
+    page = parchea_listas(page)
     page = page.replace("Propuestas de Claude", "Propuestas")
     page = marca(page)
     page = page.replace("</head>", "<style id=\"compacto\">" + COMPACT_CSS + "</style></head>", 1)
