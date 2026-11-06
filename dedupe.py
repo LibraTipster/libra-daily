@@ -50,7 +50,9 @@ def txt(p):
 
 def norm(s):
     s = unicodedata.normalize("NFKD", (s or "").lower()).encode("ascii", "ignore").decode()
+    s = re.sub(r"(\d),(\d)", r"\1.\2", s)
     s = re.sub(r"[^a-z0-9. ]+", " ", s)
+    s = re.sub(r"\b(de|del|la|el|los|las|total|totales|goles|fc|cf|cd|sd|ca|ac|sc|afc|fk)\b", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
 
