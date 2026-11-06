@@ -63,6 +63,7 @@ def compuerta(rows):
         creado = r.pop("_creado", None)
         if ver == "Rechazado":
             continue
+        r["Crítico"] = ver if ver in ("Aprobado", "Aprobado con reserva") else ""
         if not ver:
             try:
                 edad = (ahora - dt.datetime.fromisoformat(creado.replace("Z", "+00:00"))).total_seconds() / 3600
@@ -340,6 +341,7 @@ COMPACT_CSS = """
 .porque .sec{margin-top:0!important;padding-top:0!important}
 .porque p{margin:6px 0 0;font-size:14px;line-height:1.5;max-width:62ch}
 .pc-body:has(details.porque) .why-row{display:none!important}
+.pq-crit{margin-top:8px;font-size:13px;font-weight:700}
 .pq-chk{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;opacity:.8}
 """
 
@@ -371,9 +373,9 @@ COMPACT_JS = """
 
 
 PQ_JS = (
-    'function PQ(a){var t=String(a.porque||"").split(/\\n/).map(function(x){return x.trim()}).filter(Boolean);'
-    'if(!t.length)return"";var c=a.chk,k="Completo"===c?"Contexto verificado":"Parcial"===c?"Contexto verificado en parte":"Contexto sin verificar";'
-    'return\'<details class="fold porque"><summary>Por qué</summary><div class="sec">\'+t.map(function(x){return"<p>"+m(x)+"</p>"}).join("")'
+    'function PQ(a){var cr=a.crit?\'<div class="pq-crit">\\ud83e\\uddd0 Cr\\u00edtico: \'+a.crit+"</div>":"";var t=String(a.porque||"").split(/\\n/).map(function(x){return x.trim()}).filter(Boolean);'
+    'if(!t.length)return cr;var c=a.chk,k="Completo"===c?"Contexto verificado":"Parcial"===c?"Contexto verificado en parte":"Contexto sin verificar";'
+    'return cr+\'<details class="fold porque"><summary>Por qué</summary><div class="sec">\'+t.map(function(x){return"<p>"+m(x)+"</p>"}).join("")'
     '+"</div></details>"}'
 )
 
@@ -386,7 +388,7 @@ def parchea(page):
     a4 = '"Sin razonamiento registrado."}var c=a.pr.bullets'
     for k in (a1, a2, a3, a4):
         assert page.count(k) == 1, "parche no aplicable: " + k[:40]
-    page = page.replace(a1, 'arg:b(a.Argumento),porque:b(a["Por qué"]),chk:a.Chequeo||"",valor:')
+    page = page.replace(a1, 'arg:b(a.Argumento),porque:b(a["Por qué"]),crit:a["Crítico"]||"",chk:a.Chequeo||"",valor:')
     page = page.replace(a2, '</dl>"+wa(a)+PQ(a)+\'<details class="fold"><summary>Ver análisis completo</summary>\'')
     page = page.replace(a3, PQ_JS + a3)
     page = page.replace(a4, 'a.porque?a.porque.split("\\n")[0]:"Sin razonamiento registrado."}var c=a.pr.bullets')
