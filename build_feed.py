@@ -392,6 +392,13 @@ def parchea(page):
     page = page.replace(a2, '</dl>"+wa(a)+PQ(a)+\'<details class="fold"><summary>Ver análisis completo</summary>\'')
     page = page.replace(a3, PQ_JS + a3)
     page = page.replace(a4, 'a.porque?a.porque.split("\\n")[0]:"Sin razonamiento registrado."}var c=a.pr.bullets')
+    # Partido con picks mezclados: dos etiquetas (verde "N ganados" y rojo "N perdidos") en vez de una sola roja
+    m1 = '{cls:n?"loss":r?"win":"void",text:r+" ganó"+(1===r?"":"n")+", "+n+" perdió"+(1===n?"":"n")}'
+    m2 = '(r.text?\'<span class="tag \'+r.cls+\'">\'+m(r.text)+"</span>":"")'
+    for k in (m1, m2):
+        assert page.count(k) == 1, "parche no aplicable: " + k[:40]
+    page = page.replace(m1, '{cls:r&&n?"mixed":n?"loss":r?"win":"void",g:r+(1===r?" ganado":" ganados"),l:n+(1===n?" perdido":" perdidos"),text:r&&n?"mixed":n?n+(1===n?" perdido":" perdidos"):r?r+(1===r?" ganado":" ganados"):"Nulo"}')
+    page = page.replace(m2, '(r.text?"mixed"===r.cls?\'<span class="tag win">\'+m(r.g)+\'</span><span class="tag loss">\'+m(r.l)+"</span>":\'<span class="tag \'+r.cls+\'">\'+m(r.text)+"</span>":"")')
     return page
 
 
