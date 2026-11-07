@@ -11,7 +11,7 @@ Opcionales:
   DRY_RUN=1      genera la imagen pero NO la envía
   SAMPLE=1       usa datos de ejemplo (no lee Notion)
 """
-import base64, datetime as dt, html, json, os, sys, urllib.request, urllib.error, uuid
+import base64, datetime as dt, html, json, os, sys, time, urllib.request, urllib.error, uuid
 
 PROPUESTAS_DS = "3355f707-917c-48ef-b5bc-0fe8c66fcd89"  # Propuestas Claude (data source)
 NOTION_VERSION = "2025-09-03"
@@ -29,11 +29,22 @@ def lima_today():
 def http_json(url, data=None, headers=None, method=None):
     req = urllib.request.Request(url, data=json.dumps(data).encode() if data is not None else None,
                                  headers=headers or {}, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read().decode())
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"HTTP {e.code} en {url}: {e.read().decode()[:400]}")
+    ultimo = None
+    for intento in range(1, 4):
+        try:
+            with urllib.request.urlopen(req, timeout=90) as r:
+                return json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 429 or e.code >= 500:
+                ultimo = f"HTTP {e.code}"
+                time.sleep(8 * intento)
+                continue
+            raise SystemExit(f"HTTP {e.code} en {url}: {e.read().decode()[:400]}")
+        except OSError as e:
+            ultimo = repr(e)
+            print(f"Lectura intento {intento}/3 fallo: {ultimo}", flush=True)
+            time.sleep(8 * intento)
+    raise SystemExit(f"Sin respuesta tras 3 intentos en {url}: {ultimo}")
 
 
 def prop(p, name):
@@ -173,11 +184,24 @@ def send_photo(png_path, caption):
     parts.append(f"--{boundary}--\r\n".encode())
     req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendPhoto", data=b"".join(parts),
                                  headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read().decode())
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"Telegram HTTP {e.code}: {e.read().decode()[:400]}")
+    # 06/11: un sendPhoto agoto la espera de lectura (60 s) y el flujo cayo sin enviar la imagen:
+    # ahora espera 180 s y reintenta hasta 3 veces (si Telegram ya la acepto, se ve como Telegram OK).
+    ultimo = None
+    for intento in range(1, 4):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                return json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 429 or e.code >= 500:
+                ultimo = f"HTTP {e.code}"
+                time.sleep(10 * intento)
+                continue
+            raise SystemExit(f"Telegram HTTP {e.code}: {e.read().decode()[:400]}")
+        except OSError as e:
+            ultimo = repr(e)
+            print(f"Telegram intento {intento}/3 fallo: {ultimo}", flush=True)
+            time.sleep(10 * intento)
+    raise SystemExit(f"Telegram no respondio tras 3 intentos: {ultimo}")
 
 
 def main():
