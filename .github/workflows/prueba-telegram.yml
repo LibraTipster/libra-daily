@@ -1,0 +1,24 @@
+name: Prueba Telegram
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar prueba al canal Prueba Claude
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, urllib.error
+          E=lambda i,a: '<tg-emoji emoji-id="%s">%s</tg-emoji>' % (i,a)
+          t = (E('5418269241549791048','💙') + '<b><i>STAKE 1 | RESPONSABILIDAD </i></b><b><i>' + E('5231200819986047254','📊') + '</i></b><i>🔞</i>\n\n'
+               '<i>' + E('6219549292458150316','👑') + ' <u>Andreeva vs Muchova</u></i>\n'
+               '<i>' + E('5415607860769857239','✅') + ' Andreeva gana</i>')
+          d = json.dumps({'chat_id': -1004487273513, 'text': t, 'parse_mode': 'HTML'}).encode()
+          r = urllib.request.Request('https://api.telegram.org/bot' + os.environ['BOT_TOKEN'] + '/sendMessage', d, {'Content-Type': 'application/json'})
+          try:
+              x = json.load(urllib.request.urlopen(r, timeout=60))
+              print('ok', x.get('ok'), [e['type'] for e in x['result'].get('entities', [])])
+          except urllib.error.HTTPError as e:
+              print('ERROR', e.code, e.read().decode())
+          PY
