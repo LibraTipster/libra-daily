@@ -1,0 +1,129 @@
+name: Publicar picks en Telegram
+on: workflow_dispatch
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Publicar
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          MEMBERS_KEY: ${{ secrets.MEMBERS_KEY }}
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+        run: |
+          pip install -q telethon cryptography pillow numpy
+          python3 -u - <<'PY'
+          import os, re, io, json, base64, hashlib, urllib.request
+          from telethon.sync import TelegramClient
+          from telethon.sessions import StringSession
+          from telethon.tl.types import (MessageEntityBold, MessageEntityItalic, MessageEntityUnderline,
+              MessageEntityCustomEmoji, MessageEntityTextUrl, PeerChannel)
+          from cryptography.fernet import Fernet
+          from PIL import Image
+          import numpy as np
+          H = {'Authorization': 'Bearer ' + os.environ['NOTION_TOKEN'], 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json'}
+          def nreq(m, p, b=None):
+              r = urllib.request.Request('https://api.notion.com/v1/' + p, json.dumps(b).encode() if b is not None else None, H, method=m)
+              return json.load(urllib.request.urlopen(r, timeout=60))
+          def getv(pid):
+              return ''.join(t['plain_text'] for t in nreq('GET', 'pages/' + pid)['properties']['Dato real']['rich_text'])
+          def setv(pid, v):
+              nreq('PATCH', 'pages/' + pid, {'properties': {'Dato real': {'rich_text': [{'type': 'text', 'text': {'content': v[i:i+1900]}} for i in range(0, max(len(v), 1), 1900)]}}})
+          JOB = '418f13b8700e8153' '88ae' 'eb0a37976bb7'
+          job = json.loads(getv(JOB) or '{}')
+          if not job.get('posts'):
+              print('cola vacía, nada que publicar'); raise SystemExit
+          key = base64.urlsafe_b64encode(hashlib.pbkdf2_hmac('sha256', os.environ['MEMBERS_KEY'].encode(), b'libra-tg-session', 200000, 32))
+          sess = Fernet(key).decrypt(getv('418f13b8700e8141a75af7c6c621f9c6').encode()).decode()
+          c = TelegramClient(StringSession(sess), int(os.environ['TG_API_ID']), os.environ['TG_API_HASH'])
+          c.connect(); assert c.is_user_authorized(); c.get_dialogs()
+          FREE, PREM, STG = 2008608519, 2388086978, 4487273513
+          ent = lambda i: c.get_entity(PeerChannel(i))
+          def u16(s): return len(s.encode('utf-16-le')) // 2
+          def parse(mk):
+              text = ''; ents = []; st = []
+              for tok in re.split(r'(\{CE:\d+:[^}]*\}|<a [^>]*>|</a>|</?[biu]>)', mk):
+                  if not tok: continue
+                  if tok.startswith('{CE:'):
+                      _, d, alt = tok[1:-1].split(':', 2)
+                      ents.append(MessageEntityCustomEmoji(u16(text), u16(alt), int(d))); text += alt
+                  elif tok.startswith('<a '):
+                      st.append(('a', u16(text), tok[3:-1]))
+                  elif tok == '</a>' or tok in ('</b>', '</i>', '</u>'):
+                      k, o, h = st.pop()
+                      cls = {'b': MessageEntityBold, 'i': MessageEntityItalic, 'u': MessageEntityUnderline}
+                      if k == 'a': ents.append(MessageEntityTextUrl(o, u16(text) - o, h))
+                      else: ents.append(cls[k](o, u16(text) - o))
+                  elif tok in ('<b>', '<i>', '<u>'):
+                      st.append((tok[1], u16(text), None))
+                  else:
+                      text += tok
+              return text, sorted(ents, key=lambda e: e.offset)
+          def crop_ticket(raw):
+              im = Image.open(io.BytesIO(raw)).convert('RGB'); a = np.asarray(im).astype(int); Hh, W, _ = a.shape
+              top = int(Hh * 0.105)
+              def isgrey(p): return abs(p[0]-234) < 8 and abs(p[1]-238) < 8 and abs(p[2]-243) < 8
+              white = a[:, W//2].min(axis=1) >= 250
+              bottom = None; lw = None
+              for y in range(top, int(Hh * 0.9)):
+                  if white[y]: lw = y
+                  elif lw is not None and y - lw > 3 and all(isgrey(a[yy, W//2]) for yy in range(y, min(y+60, Hh))):
+                      bottom = lw; break
+              assert bottom, 'no encontré el final del ticket'
+              notch = [y for y in range(top, bottom) if sum(isgrey(a[y, x]) for x in range(18, 34)) >= 10 and a[y, W//2].min() >= 240]
+              gr = []
+              for y in notch:
+                  if gr and y - gr[-1][-1] <= 3: gr[-1].append(y)
+                  else: gr.append([y])
+              mg = []
+              for g in gr:
+                  if mg and g[0] - mg[-1][-1] <= 8: mg[-1] += g
+                  else: mg.append(list(g))
+              real = [g for g in mg if len(g) >= 15]
+              first = real[0][-1] - 8 if real else top
+              out = io.BytesIO(); im.crop((0, first, W, bottom + 8)).save(out, 'JPEG', quality=95); out.name = 'ticket.jpg'; out.seek(0)
+              return out
+          # plantillas (ids de emojis premium de tus propios posts)
+          CE = lambda n, e: '{CE:%s:%s}' % (n, e)
+          AZUL, BAR, CORONA, CHECK = CE(5418269241549791048, '💙'), CE(5231200819986047254, '📊'), CE(6219549292458150316, '👑'), CE(5415607860769857239, '✅')
+          FLECHA, DINERO, RAYO = CE(5346105514575025401, '➡️'), CE(5409048419211682843, '💵'), CE(5373066076558996568, '⚡')
+          AVISO, LINK, MOVIL = CE(5364241851500997604, '⚠️'), CE(5271604874419647061, '🔗'), CE(5319160079465857105, '📱')
+          def free_ticket_caption(p):
+              return (AZUL + '<i><b>STAKE ' + p['stake'] + ' | RESPONSABILIDAD</b> </i>🔞' + BAR + '\n\n🔗<a https://www.libratipster.online/recomendadas><b>Haz esta apuesta en las mismas casas que yo y gana un bono de 100%</b></a>')
+          def free_apuesta_texto(p):
+              ev = '\n\n'.join('<i>🏆<b> ' + e['liga'] + '</b></i>\n' + CHECK + '<i><u>' + e['partido'] + '</u></i>\n' + FLECHA + '<i> ' + e['pick'] + '</i>' for e in p['eventos'])
+              return (AZUL + '<b><i><u>' + p.get('orden', '1era') + ' Inversión del día</u></i></b>\n\n' + ev + '\n\n' + DINERO + '<i><u>CUOTA <b>' + p['cuota'] + '</b></u></i><b>' + BAR + '</b><i><u> STAKE <b>' + p['stake'] + '</b></u></i><i>' + RAYO + '</i>\n\n'
+                      '<i>🔞 <b>Responsabilidad al apostar, respeten el stake y su bank</b></i>\n\n' + LINK + '<a https://www.libratipster.online/casasrecomendadas>Haz esta apuesta acá, seguro</a>\n\n'
+                      + MOVIL + '<a https://instagram.com/_alejandrobermudez>Sígueme en Instagram, siempre hay regalos en las historias🎁</a>')
+          def picks_block(p):
+              return '\n\n'.join(CORONA + '<i> <u>' + e['partido'] + '</u>\n</i>' + CHECK + '<i> ' + e['pick'] + '</i>' for e in p['eventos'])
+          def free_recom_caption(p):
+              return (AZUL + '<b><i>RECOMENDACIÓN DEL DÍA \n</i></b><b><i>' + AVISO + '</i></b><b><i>RESPONSABILIDAD </i></b><b><i>' + BAR + '</i></b><i>🔞</i>\n\n' + picks_block(p)
+                      + '\n\n<i>🔞<b>Recuerda controlar tu stake, ten responsabilidad para poder vivir de las deportivas</b></i>')
+          def prem_caption(p):
+              return AZUL + '<b><i>STAKE ' + p['stake'] + ' | RESPONSABILIDAD </i></b><b><i>' + BAR + '</i></b><i>🔞</i>\n\n' + picks_block(p)
+          stg = ent(STG)
+          dest = job.get('destino', 'prueba')
+          def dst(canal): return stg if dest == 'prueba' else ent(FREE if canal == 'free' else PREM)
+          def banner(chat_id, msg_id, to):
+              m = c.get_messages(ent(chat_id), ids=msg_id); assert m and m.media, 'banner no encontrado'
+              c.send_file(to, m.media)
+          def foto(to, p, cap):
+              m = c.get_messages(stg, ids=p['ticket']); assert m and m.media, 'ticket no encontrado'
+              raw = c.download_media(m, file=bytes)
+              t, e = parse(cap); assert len(t) <= 1024, 'caption > 1024'
+              c.send_file(to, crop_ticket(raw), caption=t, formatting_entities=e)
+          for i, p in enumerate(job['posts']):
+              to = dst(p['canal'])
+              if p['canal'] == 'free' and p['tipo'] == 'apuesta':
+                  banner(FREE, job.get('banner_free_apuesta', 14048), to); foto(to, p, free_ticket_caption(p))
+                  t, e = parse(free_apuesta_texto(p)); c.send_message(to, t, formatting_entities=e, link_preview=False)
+              elif p['canal'] == 'free':
+                  banner(FREE, job.get('banner_free_recom', 14051), to); foto(to, p, free_recom_caption(p))
+              else:
+                  banner(PREM, job.get('banner_premium', 6614), to); foto(to, p, prem_caption(p))
+              print('publicado', i + 1, p['canal'], p['tipo'], '->', dest)
+          setv(JOB, '{}')
+          c.disconnect()
+          PY
