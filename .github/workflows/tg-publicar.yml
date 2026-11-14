@@ -70,6 +70,24 @@ jobs:
                   if white[y]: lw = y
                   elif lw is not None and y - lw > 3 and all(isgrey(a[yy, W//2]) for yy in range(y, min(y+60, Hh))):
                       bottom = lw; break
+              if bottom is None:
+                  m40 = a[:, 40].min(axis=1)
+                  wm = m40 >= 238
+                  lw2 = None
+                  for y in range(top, int(Hh * 0.9)):
+                      if wm[y]: lw2 = y
+                      elif lw2 is not None and not any(wm[yy] for yy in range(y, min(y+8, Hh))):
+                          bottom = lw2; break
+              hidden = False
+              if bottom is None:
+                  m40 = a[:, 40].min(axis=1)
+                  for y in range(int(Hh * 0.6), int(Hh * 0.9)):
+                      if m40[y] >= 248 and all(236 <= m40[yy] <= 253 for yy in range(y - 12, y)):
+                          bottom = y - 1; hidden = True; break
+                  if hidden:
+                      for y in range(bottom - 20, bottom + 1):
+                          mk = a[y].min(axis=1) >= 236; a[y][mk] = 255
+                      im = Image.fromarray(a.astype('uint8'))
               assert bottom, 'no encontré el final del ticket'
               notch = [y for y in range(top, bottom) if sum(isgrey(a[y, x]) for x in range(18, 34)) >= 10 and a[y, W//2].min() >= 240]
               gr = []
@@ -82,7 +100,7 @@ jobs:
                   else: mg.append(list(g))
               real = [g for g in mg if len(g) >= 15]
               first = real[0][-1] - 8 if real else top
-              out = io.BytesIO(); im.crop((0, first, W, bottom + 8)).save(out, 'JPEG', quality=95); out.name = 'ticket.jpg'; out.seek(0)
+              out = io.BytesIO(); im.crop((0, first, W, bottom + 1 if hidden else bottom + 8)).save(out, 'JPEG', quality=95); out.name = 'ticket.jpg'; out.seek(0)
               return out
           # plantillas (ids de emojis premium de tus propios posts)
           CE = lambda n, e: '{CE:%s:%s}' % (n, e)
