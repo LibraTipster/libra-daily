@@ -184,14 +184,23 @@ def ev_names(e):
     return [c["team"].get("displayName", "") for c in e["competitions"][0]["competitors"]]
 
 
-def find_event(home, away, d):
+def find_event(home, away, d, hora=""):
     evs = []
     for off in (0, 1, -1):
         evs += scoreboard(d + dt.timedelta(days=off))
+    exp = None
+    mh = re.match(r"\s*(\d{1,2}):(\d{2})", hora or "")
+    if mh:
+        exp = dt.datetime.combine(d, dt.time(int(mh.group(1)), int(mh.group(2))), tzinfo=dt.timezone.utc) + dt.timedelta(hours=5)
     best, anchor = None, []
     for e in evs:
         names = ev_names(e)
         if len(names) != 2: continue
+        gap = None
+        if exp is not None:
+            try: gap = abs((dt.datetime.fromisoformat(e["date"].replace("Z", "+00:00")) - exp).total_seconds())
+            except Exception: gap = None
+            if gap is None or gap > 3 * 3600: continue
         s_direct = min(sim(home, names[0]), sim(away, names[1]))
         s_swap = min(sim(home, names[1]), sim(away, names[0]))
         s = max(s_direct, s_swap)
@@ -199,7 +208,7 @@ def find_event(home, away, d):
             best = (s, e, s_swap > s_direct)
         else:
             h = max(sim(home, names[0]), sim(home, names[1])); a = max(sim(away, names[0]), sim(away, names[1]))
-            if max(h, a) >= 0.85 and (is_res(home) == is_res(away)):
+            if max(h, a) >= 0.85 and (is_res(home) == is_res(away)) and gap is not None and gap <= 1200:
                 anchor.append((e, sim(home, names[1]) > sim(home, names[0]) if h >= a else sim(away, names[0]) > sim(away, names[1])))
     if best: return best
     if len(anchor) == 1:
@@ -324,7 +333,7 @@ def eval_football(p):
     d = dt.date.fromisoformat(p["fecha"][:10])
     if " vs " not in p["partido"]: return None, "partido sin formato"
     home, away = p["partido"].split(" vs ", 1)
-    f = find_event(home, away, d)
+    f = find_event(home, away, d, p.get("hora", ""))
     if not f: return None, "partido no encontrado en ESPN"
     _, ev, swapped = f
     if not ev["competitions"][0]["status"]["type"].get("completed"): return None, "no terminado"
@@ -399,6 +408,11 @@ def eval_tennis(p):
             r = parse(p["seleccion"], a, b)
             if "line" not in r: return None, "selección no interpretada"
             if retired: return "Nulo", info + " — partido incompleto"
+            si = 0 if re.search(r"primer set|1er set|set 1\b|1 set\b", n) else 1 if re.search(r"segundo set|2do set|set 2\b|2 set\b", n) else None
+            if si is not None:
+                if len(sets[0]) <= si or len(sets[1]) <= si: return None, "set no jugado"
+                g1 = sets[0][si] + sets[1][si]
+                return verdict(g1, r), f"{info} → set {si + 1}: {g1} games vs {r['line']}"
             return verdict(tot_games, r), f"{info} → {tot_games} games vs {r['line']}"
         if "set" in mk and who is not None:
             if retired: return "Nulo", info + " — partido incompleto"
@@ -426,7 +440,7 @@ def main():
     for pg in pages:
         pr = pg["properties"]
         p = {"id": pg["id"], "partido": txt(pr.get("Partido")), "seleccion": txt(pr.get("Selección")), "mercado": txt(pr.get("Mercado")),
-             "deporte": txt(pr.get("Deporte")), "fecha": txt(pr.get("Fecha"))}
+             "deporte": txt(pr.get("Deporte")), "fecha": txt(pr.get("Fecha")), "hora": txt(pr.get("Hora"))}
         try:
             if p["deporte"] == "Fútbol": res, info = eval_football(p)
             elif p["deporte"] == "Tenis": res, info = eval_tennis(p)
