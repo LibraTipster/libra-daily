@@ -8,6 +8,7 @@ import datetime as dt, difflib, json, os, re, sys, time, unicodedata, urllib.err
 
 PROP_DS = "3355f707-917c-48ef-b5bc-0fe8c66fcd89"
 LEDGER_DS = "35554701-4df3-4a2c-942b-f25654585ead"
+MIS_DS = "3000f12d-6ac2-4e9e-9c44-bf46b2e50701"  # Picks Libra (los picks propios, Origen = Mío)
 TOKEN = os.environ["NOTION_TOKEN"]
 DRY = os.environ.get("DRY") == "1"
 DAYS_BACK = int(os.environ.get("DAYS_BACK", "14"))
@@ -67,7 +68,17 @@ def rt(s):
 _TR = str.maketrans({"ø": "o", "æ": "ae", "ð": "d", "þ": "th", "ł": "l", "đ": "d", "ß": "ss", "œ": "oe"})
 ALIAS = {"copenhagen": "kobenhavn", "internazionale": "inter", "munchen": "munich", "koln": "cologne", "psg": "paris saint germain",
          "man": "manchester", "utd": "united", "sporting cp": "sporting", "malmo ff": "malmo", "gothenburg": "goteborg",
-         "spurs": "tottenham", "wolves": "wolverhampton", "sheffield utd": "sheffield united"}
+         "spurs": "tottenham", "wolves": "wolverhampton", "sheffield utd": "sheffield united",
+         "belgica": "belgium", "italia": "italy", "paises bajos": "netherlands", "holanda": "netherlands", "alemania": "germany",
+         "suiza": "switzerland", "escocia": "scotland", "croacia": "croatia", "republica checa": "czech republic", "chequia": "czech republic",
+         "czechia": "czech republic", "chipre": "cyprus", "letonia": "latvia", "bielorrusia": "belarus", "finlandia": "finland",
+         "espana": "spain", "inglaterra": "england", "francia": "france", "turquia": "turkey", "turkiye": "turkey",
+         "islas feroe": "faroe islands", "moldavia": "moldova", "kazajistan": "kazakhstan", "eslovaquia": "slovakia", "islandia": "iceland",
+         "luxemburgo": "luxembourg", "lituania": "lithuania", "ucrania": "ukraine", "hungria": "hungary", "irlanda del norte": "northern ireland",
+         "republica de irlanda": "ireland", "republic of ireland": "ireland", "irlanda": "ireland", "gales": "wales", "polonia": "poland",
+         "suecia": "sweden", "dinamarca": "denmark", "noruega": "norway", "rumania": "romania", "grecia": "greece", "eslovenia": "slovenia",
+         "macedonia del norte": "north macedonia", "azerbaiyan": "azerbaijan", "bosnia y herzegovina": "bosnia herzegovina",
+         "bosnia and herzegovina": "bosnia herzegovina"}
 
 
 def norm(s):
@@ -372,7 +383,7 @@ def tennis_matches(d):
                 _tn[(tour, k)] = (j or {}).get("events", [])
             for ev in _tn[(tour, k)]:
                 for g in ev.get("groupings", []):
-                    if "Singles" not in (g.get("grouping", {}).get("displayName", "")): continue
+                    if not re.search(r"Singles|Doubles", g.get("grouping", {}).get("displayName", "")): continue
                     out += g.get("competitions", [])
     return out
 
@@ -381,14 +392,21 @@ def games(ls):
     return sum(int(re.match(r"\d+", str(x.get("value", x.get("displayValue", "0")))).group(0)) if re.match(r"\d+", str(x.get("value", x.get("displayValue", "0")))) else 0 for x in ls)
 
 
+def cname(x):
+    if x.get("athlete"): return x["athlete"].get("displayName", "")
+    if x.get("roster"): return x["roster"].get("displayName", "")
+    return ""
+
+
 def eval_tennis(p):
     d = dt.date.fromisoformat(p["fecha"][:10])
     if " vs " not in p["partido"]: return None, "partido sin formato"
     a, b = p["partido"].split(" vs ", 1)
     for c in tennis_matches(d):
         cs = c.get("competitors", [])
-        if len(cs) != 2 or not all(x.get("athlete") for x in cs): continue
-        nm = [x["athlete"].get("displayName", "") for x in cs]
+        if len(cs) != 2: continue
+        nm = [cname(x) for x in cs]
+        if not all(nm): continue
         s = max(min(sim(a, nm[0]), sim(b, nm[1])), min(sim(a, nm[1]), sim(b, nm[0])))
         if s < 0.6: continue
         stt = c["status"]["type"]["name"]
@@ -414,6 +432,7 @@ def eval_tennis(p):
                 g1 = sets[0][si] + sets[1][si]
                 return verdict(g1, r), f"{info} → set {si + 1}: {g1} games vs {r['line']}"
             return verdict(tot_games, r), f"{info} → {tot_games} games vs {r['line']}"
+        if "set" in mk and "total" in mk: return None, "total de sets: lo cubre la tarea diaria"
         if "set" in mk and who is not None:
             if retired: return "Nulo", info + " — partido incompleto"
             won = sum(1 for s1, s2 in zip(sets[who], sets[1 - who]) if s1 > s2)
@@ -426,6 +445,42 @@ def eval_tennis(p):
 
 
 # ---------------------------------------------------------------- principal
+def liquidar_mis():
+    """Picks propios (Picks Libra, Origen = Mío): mismo motor que las propuestas (ESPN, fútbol y tenis, individuales y dobles).
+    Lo que no se pueda verificar queda Pendiente para la tarea diaria (e-sports, challengers, etc.). El log no lleva nombres (repo público)."""
+    today = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=5)).date()
+    lo = (today - dt.timedelta(days=DAYS_BACK)).isoformat()
+    flt = {"and": [{"or": [{"property": "Resultado", "select": {"equals": "Pendiente"}},
+                           {"property": "Resultado", "select": {"is_empty": True}}]},
+                   {"property": "Origen", "select": {"equals": "Mío"}},
+                   {"property": "Fecha", "date": {"on_or_before": today.isoformat()}},
+                   {"property": "Fecha", "date": {"on_or_after": lo}}]}
+    pages = query_all(MIS_DS, flt)
+    ok, quedan = 0, 0
+    for pg in pages:
+        pr = pg["properties"]
+        p = {"id": pg["id"], "partido": txt(pr.get("Partido")), "seleccion": txt(pr.get("Selección")), "mercado": txt(pr.get("Mercado")),
+             "deporte": txt(pr.get("Deporte")), "fecha": txt(pr.get("Fecha")), "hora": txt(pr.get("Hora"))}
+        sel = norm(p["seleccion"])
+        if p["deporte"] == "Tenis" and not p["mercado"]:
+            p["mercado"] = "Total de games" if re.search(r"games|juegos", sel) else "Ganar un set" if re.search(r"\bset\b", sel) else "Ganador" if "gana" in sel else ""
+        try:
+            if p["deporte"] == "Fútbol": res, info = eval_football(p)
+            elif p["deporte"] == "Tenis": res, info = eval_tennis(p)
+            else: res, info = None, "deporte sin fuente automática (lo cubre la tarea diaria)"
+        except Exception as e:
+            res, info = None, f"error: {e}"
+        if res is None:
+            quedan += 1
+            if info != "no terminado": log(f"  · mío pendiente: ...{pg['id'][-6:]} | {p['deporte']} → {info}")
+            continue
+        log(f"  mío {res}: ...{pg['id'][-6:]} | {p['deporte']}")
+        if not DRY:
+            notion("PATCH", f"pages/{pg['id']}", {"properties": {"Resultado": {"select": {"name": res}}}})
+        ok += 1
+    log(f"Mis picks liquidados: {ok}; sin liquidar: {quedan} de {len(pages)}")
+
+
 def main():
     today = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=5)).date()
     lo = (today - dt.timedelta(days=DAYS_BACK)).isoformat()
@@ -495,6 +550,11 @@ def main():
             notion("PATCH", f"pages/{pg['id']}", {"properties": {"Resultado": {"select": {"name": res}}, "Nota": {"rich_text": rt(nota)}}})
         mir += 1
     log(f"Picks de Claude (ledger) espejados: {mir} de {len(led)} pendientes")
+    # picks propios (Picks Libra, Origen = Mío)
+    try:
+        liquidar_mis()
+    except (RuntimeError, SystemExit) as e:
+        log("AVISO: no se pudo procesar Picks Libra (¿la integración de Notion tiene acceso a esa base?) " + str(e)[:120])
     # resumen para el log de Actions
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
