@@ -157,7 +157,7 @@ jobs:
               if p['canal'] == 'free' and p['tipo'] == 'apuesta':
                   banner(FREE, job.get('banner_free_apuesta', 14048), to); foto(to, p, free_ticket_caption(p))
                   t, e = parse(free_apuesta_texto(p)); c.send_message(to, t, formatting_entities=e, link_preview=False)
-              elif p['canal'] == 'free':
+              elif p['canal'] == 'free' or p['tipo'] == 'recomendacion':
                   banner(FREE, job.get('banner_free_recom', 14051), to); foto(to, p, free_recom_caption(p))
               else:
                   banner(PREM, job.get('banner_premium', 6614), to); foto(to, p, prem_caption(p))
