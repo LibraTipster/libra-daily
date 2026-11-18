@@ -91,7 +91,7 @@ jobs:
                           lw = None
                           for y in range(rl[0][0], P):
                               if c5[y] >= 250: lw = y
-                              elif lw is not None and y - lw > 3 and all(200 <= c5[yy] <= 246 for yy in range(y, min(y + 40, Hh))):
+                              elif lw is not None and y - lw > 3 and all(200 <= c5[yy] <= 246 for yy in range(y, min(y + 40, P - 6))):
                                   bottom = lw; break
                   first = top - 12
               if not hdr or not bottom:
